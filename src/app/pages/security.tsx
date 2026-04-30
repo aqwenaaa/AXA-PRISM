@@ -2,11 +2,6 @@ import { Button } from "../components/ui/button";
 import { ArrowLeft, Heart, Shield, Lock, Eye, FileCheck, Database, Award, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import hipaaLogo from "../../assets/hipaa.png";
-import socLogo from "../../assets/soc.png";
-import isoLogo from "../../assets/iso.png";
-import gdprLogo from "../../assets/gdpr.png";
-import pciLogo from "../../assets/pci.png";
 
 
 export default function SecurityPage() {
@@ -98,12 +93,12 @@ export default function SecurityPage() {
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid md:grid-cols-5 gap-6">
           {[
-            { name: 'HIPAA', subtitle: 'Compliant', image: hipaaLogo },
-            { name: 'SOC 2', subtitle: 'Type II', image: socLogo },
-            { name: 'ISO 27001', subtitle: 'Certified', image: isoLogo },
-            { name: 'GDPR', subtitle: 'Ready', image: gdprLogo },
-            { name: 'PCI DSS', subtitle: 'Level 1', image: pciLogo },
-          ].map((cert, i) => (
+           { name: 'HIPAA', subtitle: 'Compliant', image: "/assets/hipaa.png" },
+          { name: 'SOC 2', subtitle: 'Type II', image: "/assets/soc.png" },
+          { name: 'ISO 27001', subtitle: 'Certified', image: "/assets/iso.png" },
+          { name: 'GDPR', subtitle: 'Ready', image: "/assets/gdpr.png" },
+          { name: 'PCI DSS', subtitle: 'Level 1', image: "/assets/pci.png" },
+            ].map((cert, i) => (
             <motion.div
               key={cert.name}
               className="glass rounded-xl p-6 text-center"

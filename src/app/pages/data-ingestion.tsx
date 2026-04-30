@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Play, Database, X } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Play, Database, X, Send } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -10,6 +10,7 @@ export default function DataIngestionPage() {
   const [policyUploaded, setPolicyUploaded] = useState(false);
   const [claimUploaded, setClaimUploaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [engineCompleted, setEngineCompleted] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadType, setUploadType] = useState<"policy" | "claims">("policy");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -18,7 +19,15 @@ export default function DataIngestionPage() {
   const handleRunEngine = () => {
     setIsProcessing(true);
     // Simulate processing
-    setTimeout(() => setIsProcessing(false), 3000);
+    setTimeout(() => {
+      setIsProcessing(false);
+      setEngineCompleted(true);
+    }, 3000);
+  };
+
+  const handleSendToRiskAnalyst = () => {
+    // TODO: Implement send to risk analyst functionality
+    console.log("Sending to risk analyst...");
   };
 
   const openUploadModal = (type: "policy" | "claims") => {
@@ -254,20 +263,30 @@ export default function DataIngestionPage() {
             </div>
           </div>
           
-          <Button
-            onClick={handleRunEngine}
-            disabled={!policyUploaded || !claimUploaded || isProcessing}
-            className="bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary text-white px-8 h-12 rounded-xl shadow-lg disabled:opacity-50"
-          >
-            {isProcessing ? (
-              <>Processing...</>
-            ) : (
-              <>
-                <Play className="w-5 h-5 mr-2" />
-                Run Intelligence Engine
-              </>
-            )}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={handleSendToRiskAnalyst}
+              disabled={!policyUploaded || !claimUploaded || isProcessing || !engineCompleted}
+              className="bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary text-white px-8 h-12 rounded-xl shadow-lg disabled:opacity-50"
+            >
+              <Send className="w-5 h-5 mr-2" />
+              Send to Risk Analyst
+            </Button>
+            <Button
+              onClick={handleRunEngine}
+              disabled={!policyUploaded || !claimUploaded || isProcessing}
+              className="bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary text-white px-8 h-12 rounded-xl shadow-lg disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <>Processing...</>
+              ) : (
+                <>
+                  <Play className="w-5 h-5 mr-2" />
+                  Run Intelligence Engine
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         
         {isProcessing && (

@@ -2,6 +2,12 @@ import { Button } from "../components/ui/button";
 import { ArrowLeft, Heart, Shield, Lock, Eye, FileCheck, Database, Award, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
+import hipaaLogo from "../../assets/hipaa.png";
+import socLogo from "../../assets/soc.png";
+import isoLogo from "../../assets/iso.png";
+import gdprLogo from "../../assets/gdpr.png";
+import pciLogo from "../../assets/pci.png";
+
 
 export default function SecurityPage() {
   return (
@@ -92,11 +98,11 @@ export default function SecurityPage() {
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid md:grid-cols-5 gap-6">
           {[
-            { name: 'HIPAA', subtitle: 'Compliant' },
-            { name: 'SOC 2', subtitle: 'Type II' },
-            { name: 'ISO 27001', subtitle: 'Certified' },
-            { name: 'GDPR', subtitle: 'Ready' },
-            { name: 'PCI DSS', subtitle: 'Level 1' },
+            { name: 'HIPAA', subtitle: 'Compliant', image: hipaaLogo },
+            { name: 'SOC 2', subtitle: 'Type II', image: socLogo },
+            { name: 'ISO 27001', subtitle: 'Certified', image: isoLogo },
+            { name: 'GDPR', subtitle: 'Ready', image: gdprLogo },
+            { name: 'PCI DSS', subtitle: 'Level 1', image: pciLogo },
           ].map((cert, i) => (
             <motion.div
               key={cert.name}
@@ -107,7 +113,15 @@ export default function SecurityPage() {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               whileHover={{ scale: 1.05 }}
             >
-              <Award className="w-12 h-12 mx-auto mb-3 text-primary" />
+              {cert.image ? (
+                  <img
+                    src={cert.image}
+                    alt={cert.name}
+                    className="w-24 h-24 mx-auto mb-3 object-contain"
+                  />
+                ) : (
+                  <Award className="w-12 h-12 mx-auto mb-3 text-primary" />
+                )}
               <div className="font-semibold text-foreground">{cert.name}</div>
               <div className="text-sm text-foreground/60">{cert.subtitle}</div>
             </motion.div>

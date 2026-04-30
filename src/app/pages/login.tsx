@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import { Lock, User, ArrowRight, Shield } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -11,8 +11,34 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
+  // Load saved credentials on mount
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("axa_prism_username");
+    const savedPassword = localStorage.getItem("axa_prism_password");
+    const savedRememberMe = localStorage.getItem("axa_prism_remember_me");
+    
+    if (savedUsername && savedPassword && savedRememberMe === "true") {
+      setUsername(savedUsername);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Save credentials if remember me is checked
+    if (rememberMe) {
+      localStorage.setItem("axa_prism_username", username);
+      localStorage.setItem("axa_prism_password", password);
+      localStorage.setItem("axa_prism_remember_me", "true");
+    } else {
+      // Clear saved credentials if remember me is not checked
+      localStorage.removeItem("axa_prism_username");
+      localStorage.removeItem("axa_prism_password");
+      localStorage.setItem("axa_prism_remember_me", "false");
+    }
+    
     // Navigate to data ingestion page after login
     navigate("/data-ingestion");
   };
@@ -20,55 +46,47 @@ export default function LoginPage() {
   return (
     <div className="h-screen flex">
       {/* Left Side - 3D Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-purple-600 to-indigo-700 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#8A70D6] via-[#6B4FC8] to-[#1E3A8A] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
         </div>
+
+        {/* Floating Icons */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[
+            { top: "10%", left: "15%", size: 28, delay: "0s", opacity: 0.15 },
+            { top: "25%", right: "10%", size: 20, delay: "1s", opacity: 0.12 },
+            { top: "60%", left: "8%", size: 24, delay: "2s", opacity: 0.1 },
+            { bottom: "20%", right: "18%", size: 32, delay: "0.5s", opacity: 0.13 },
+            { top: "45%", left: "50%", size: 18, delay: "1.5s", opacity: 0.1 },
+          ].map((pos, i) => (
+            <div
+              key={i}
+              className="absolute text-white animate-pulse"
+              style={{ ...pos, animationDelay: pos.delay, animationDuration: "3s" }}
+            >
+              <Shield size={pos.size} style={{ opacity: pos.opacity }} />
+            </div>
+          ))}
+        </div>
         
         {/* 3D Abstract Wave */}
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-white">
-          <div className="mb-8">
-            <div className="relative w-64 h-64">
-              {/* Animated wave shapes */}
-              <div className="absolute inset-0 opacity-80">
-                <svg viewBox="0 0 200 200" className="w-full h-full">
-                  <defs>
-                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 0.8 }} />
-                      <stop offset="100%" style={{ stopColor: '#ffffff', stopOpacity: 0.2 }} />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M 50 100 Q 75 80, 100 100 T 150 100"
-                    stroke="url(#grad1)"
-                    strokeWidth="20"
-                    fill="none"
-                    strokeLinecap="round"
-                    className="animate-pulse"
-                  />
-                  <path
-                    d="M 50 120 Q 75 140, 100 120 T 150 120"
-                    stroke="url(#grad1)"
-                    strokeWidth="20"
-                    fill="none"
-                    strokeLinecap="round"
-                    className="animate-pulse"
-                    style={{ animationDelay: '0.5s' }}
-                  />
-                  <circle cx="100" cy="100" r="60" fill="url(#grad1)" opacity="0.3" className="animate-pulse" />
-                </svg>
-              </div>
-            </div>
+          {/* Animated shield icon */}
+          <div className="mb-2">
+           <img 
+            src="/assets/logo.png"
+            alt="AXA-PRISM Logo" 
+            className="w-80 h-80 object-contain mx-auto"
+            />
           </div>
-          
-          <h1 className="text-4xl font-bold mb-4">Insurance ClaimIQ</h1>
+
+          <h1 className="text-6xl font-black mb-2 text-center tracking-wider">AXA-PRISM</h1>
           <p className="text-lg text-white/90 text-center max-w-md mb-8">
-            Advanced AI-powered claim analysis platform for enterprise risk management
+            Intelligent Claim Monitoring & Risk Prediction
           </p>
           
-          <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-          </div>
         </div>
       </div>
 
@@ -77,13 +95,15 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Card with glassmorphism */}
           <div className="bg-white rounded-xl shadow-2xl p-8 border border-border backdrop-blur-sm">
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
+            <div className="flex justify-center mb-2">
+              {/* <img 
+                src="/logo.png" 
+                alt="AXA-PRISM Logo" 
+                className="w-16 h-16 object-contain"
+              /> */}
             </div>
             
-            <h2 className="text-2xl font-bold text-center mb-2">Secure Sign In</h2>
+            <h2 className="text-4xl font-bold text-center mb-2">Sign In</h2>
             <p className="text-center text-muted-foreground mb-8">
               Access your claim analysis dashboard
             </p>
@@ -137,18 +157,14 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary text-white rounded-xl shadow-lg shadow-primary/30 transition-all"
+                className="w-full h-12 bg-gradient-to-r from-[#8A70D6] to-[#1E3A8A] hover:opacity-90 text-white rounded-xl shadow-lg shadow-primary/30 transition-all"
               >
-                <span>Secure Sign In</span>
+                <span>Sign In</span>
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </form>
 
           </div>
-
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            © 2026 AXA-PRISM. All rights reserved.
-          </p>
         </div>
       </div>
     </div>

@@ -15,6 +15,7 @@ import MedicalAuditPage from "./pages/medical-audit";
 import ExecutiveDashboardPage from "./pages/executive-dashboard";
 import ClaimGrowthPage from "./pages/claim-growth";
 import { DashboardLayout } from "./components/dashboard-layout";
+import ChangePassword from './pages/changepassword';
 
 export const router = createBrowserRouter([
   {
@@ -79,6 +80,10 @@ export const router = createBrowserRouter([
       {
         path: "profile",
         Component: ProfilePage,
+      },
+      {
+        path: "change-password", // Tambahkan path ini
+        Component: ChangePassword,
       },
     ],
   },

@@ -1,6 +1,7 @@
-import { TrendingUp, Sparkles, Calendar, DollarSign, AlertCircle, Activity, ArrowUpRight, Brain } from "lucide-react";
+import { TrendingUp, Sparkles, Calendar, DollarSign, AlertCircle, Activity, ArrowUpRight, Brain, FileDown, FileText } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 // Monthly claim growth data
@@ -77,23 +78,42 @@ export default function ClaimGrowthPage() {
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-            <TrendingUp className="w-6 h-6 text-white" />
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">AXA Claim Growth Analysis</h1>
+              <p className="text-muted-foreground">16-month trend analysis with AI-powered insights</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">AXA Claim Growth Analysis</h1>
-            <p className="text-muted-foreground">16-month trend analysis with AI-powered insights</p>
+          <div className="flex gap-2">
+            <Badge className="bg-primary/10 text-primary border-primary/20">
+              Jan 2025 - Apr 2026
+            </Badge>
+            <Badge className="bg-warning/10 text-warning border-warning/20">
+              +25.5% YoY Growth
+            </Badge>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Badge className="bg-primary/10 text-primary border-primary/20">
-            Jan 2025 - Apr 2026
-          </Badge>
-          <Badge className="bg-warning/10 text-warning border-warning/20">
-            +25.5% YoY Growth
-          </Badge>
+
+        {/* Action Buttons (Export) */}
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 shadow-sm"
+          >
+            <FileDown size={18} />
+            Export .xlsx
+          </Button>
+          <Button 
+            className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-lg shadow-purple-200 transition-all active:scale-95"
+          >
+            <FileText size={18} />
+            Export .pdf
+          </Button>
         </div>
       </div>
 
@@ -150,7 +170,6 @@ export default function ClaimGrowthPage() {
 
       {/* Trend Charts */}
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        {/* Claims Volume Trend */}
         <Card className="p-6 bg-white rounded-xl border border-border">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Monthly Claims Volume Trend</h3>
@@ -195,7 +214,6 @@ export default function ClaimGrowthPage() {
           </ResponsiveContainer>
         </Card>
 
-        {/* Total Cost Trend */}
         <Card className="p-6 bg-white rounded-xl border border-border">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Total Claim Cost Progression</h3>

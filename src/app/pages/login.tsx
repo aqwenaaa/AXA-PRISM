@@ -68,14 +68,6 @@ export default function LoginPage() {
           </p>
           
           <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-              <div className="text-2xl font-bold">99.9%</div>
-              <div className="text-sm text-white/80">Accuracy Rate</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-              <div className="text-2xl font-bold">25.5%</div>
-              <div className="text-sm text-white/80">Cost Reduction</div>
-            </div>
           </div>
         </div>
       </div>
@@ -152,29 +144,10 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-border">
-              <p className="text-center text-sm text-muted-foreground mb-4">
-                Select your role:
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-center p-2 rounded-lg bg-secondary/50 border border-border text-xs">
-                  Data Operator
-                </div>
-                <div className="text-center p-2 rounded-lg bg-secondary/50 border border-border text-xs">
-                  Risk Analyst
-                </div>
-                <div className="text-center p-2 rounded-lg bg-secondary/50 border border-border text-xs">
-                  Medical Auditor
-                </div>
-                <div className="text-center p-2 rounded-lg bg-secondary/50 border border-border text-xs">
-                  Strategic Manager
-                </div>
-              </div>
-            </div>
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            © 2026 ClaimIQ. All rights reserved.
+            © 2026 AXA-PRISM. All rights reserved.
           </p>
         </div>
       </div>

@@ -1,4 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router";
+import { useState } from "react";
+import LogoutModal from "../components/logoutmodal"; // Sesuaikan path-nya
 import {
   LayoutDashboard,
   Upload,
@@ -12,7 +14,7 @@ import {
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const menuItems = [
     { path: "/data-ingestion", icon: Upload, label: "Data Ingestion", role: "Data Operator" },
     { path: "/intelligence-lab", icon: Brain, label: "Intelligence Lab", role: "Risk Analyst" },
@@ -84,7 +86,7 @@ export function DashboardLayout() {
               </div>
             </button>
             <button
-              onClick={() => navigate("/logout")}
+              onClick={() => setIsModalOpen(true)} // Panggil state modal, bukan langsung pindah page
               className="p-2 hover:bg-white rounded-lg transition-colors"
               title="Logout"
             >
@@ -98,6 +100,17 @@ export function DashboardLayout() {
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
+      {/* Buat pop up sebelum logout  */}
+      <LogoutModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onConfirm={() => {
+          setIsModalOpen(false);
+          navigate("/logout");
+        }}
+        
+        />
     </div>
+    
   );
 }

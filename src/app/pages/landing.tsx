@@ -59,8 +59,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
           >
             <Link href="/" className="flex items-center">
-              <img src="assets/logo.png" alt="AXA-PRISM Logo" className="h-10 w-auto object-contain"
-              />
+              <img src="/assets/logo.png" alt="AXA-PRISM Logo" className="h-10 w-auto object-contain"/>
             </Link>
             <span className="text-xl font-semibold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">AXA-PRISM</span>
           </motion.div>
@@ -336,9 +335,9 @@ export default function LandingPage() {
           <div className="flex flex-wrap justify-center items-center gap-12">
              <div className="flex flex-wrap justify-center items-center">
             {[
-              { name: 'Redefining AXA', src: 'assets/redefining-axa.png', height: 'h-30', spacing: 'mr-8' },
-              { name: 'AXA Global', src: 'assets/axa-global.png', height: 'h-18', spacing: 'mr-16' },
-              { name: 'Mandiri', src: 'assets/mandiri.png', height: 'h-12', spacing: 'mr-0' }
+              { name: 'Redefining AXA', src: '/assets/redefining-axa.png', height: 'h-30', spacing: 'mr-8' },
+              { name: 'AXA Global', src: '/assets/axa-global.png', height: 'h-18', spacing: 'mr-16' },
+              { name: 'Mandiri', src: '/assets/mandiri.png', height: 'h-12', spacing: 'mr-0' }
             ].map((partner, i) => (
               <motion.div
                 key={partner.name}

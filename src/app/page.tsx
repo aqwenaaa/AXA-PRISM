@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import { Play, Upload, Activity, Cross, BarChart3, ArrowRight, Heart, Stethoscope, Pill, Shield, Brain, TrendingUp, Users, FileText, Clipboard, HeartPulse, Ambulance, Hospital, UserCheck } from "lucide-react";
@@ -58,9 +59,15 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-success flex items-center justify-center shadow-lg shadow-primary/20">
-              <Heart className="w-6 h-6 text-white" />
-            </div>
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/assets/logo.png"
+                alt="AXA-PRISM Logo"
+                width={40}
+                height={40}
+                className="object-contain"
+              />
+            </Link>
             <span className="text-xl font-semibold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">AXA-PRISM</span>
           </motion.div>
 
@@ -184,9 +191,8 @@ export default function LandingPage() {
                     {[...Array(25)].map((_, i) => (
                       <motion.div
                         key={i}
-                        className={`absolute w-3 h-3 rounded-full ${
-                          i % 7 === 0 ? 'bg-gradient-to-br from-destructive to-warning shadow-lg shadow-destructive/50' : 'bg-gradient-to-br from-primary/60 to-success/40'
-                        }`}
+                        className={`absolute w-3 h-3 rounded-full ${i % 7 === 0 ? 'bg-gradient-to-br from-destructive to-warning shadow-lg shadow-destructive/50' : 'bg-gradient-to-br from-primary/60 to-success/40'
+                          }`}
                         style={{
                           left: `${((i * 37) % 80) + 10}%`,
                           top: `${((i * 53) % 80) + 10}%`,
@@ -323,29 +329,49 @@ export default function LandingPage() {
       </section>
 
       {/* Trust Bar */}
-      <section className="border-y border-border bg-gradient-to-r from-white/50 via-primary/5 to-white/50 backdrop-blur-sm py-8">
+      <section className="border-y border-border bg-gradient-to-r from-white/50 via-primary/5 to-white/50 backdrop-blur-sm py-10">
         <div className="max-w-7xl mx-auto px-6">
+
           <motion.p
-            className="text-center text-sm text-foreground/50 mb-6"
+            className="text-center text-sm text-foreground/60 mb-8"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
             Trusted by leading global health insurance providers
           </motion.p>
+
           <div className="flex flex-wrap justify-center items-center gap-12">
-            {['Allianz Health', 'AXA Global', 'Prudential', 'MetLife', 'Zurich Care'].map((partner, i) => (
+
+            {[
+              { name: 'Redefining AXA', src: '/assets/redefining-axa.png', size: 'max-h-[85px]' },
+              { name: 'AXA Global', src: '/assets/axa-global.png', size: 'max-h-[55px]' },
+              { name: 'Mandiri', src: '/assets/mandiri.png', size: 'max-h-[40px]' }
+            ].map((partner, i) => (
+
               <motion.div
-                key={partner}
-                className="text-2xl font-bold bg-gradient-to-r from-foreground/60 to-foreground/40 bg-clip-text text-transparent"
+                key={partner.name}
+                className="flex items-center justify-center"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
               >
-                {partner}
+
+                <div className="w-[140px] flex items-center justify-center">
+                  <Image
+                    src={partner.src}
+                    alt={partner.name}
+                    width={140}
+                    height={60}
+                    className={`object-contain w-auto ${partner.size} transition duration-300 hover:scale-105`}
+                  />
+                </div>
+
               </motion.div>
+
             ))}
+
           </div>
         </div>
       </section>

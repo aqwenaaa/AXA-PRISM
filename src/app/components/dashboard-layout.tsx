@@ -9,7 +9,7 @@ import {
   Stethoscope,
   TrendingUp,
   Activity,
-  LogOut
+  LogOut,
 } from "lucide-react";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -30,13 +30,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <LayoutDashboard className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-foreground">AXA-PRISM</h2>
-              <p className="text-xs text-muted-foreground">Insurance Analytics</p>
-            </div>
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <img src="/assets/logo.png" alt="AXA-PRISM Logo" className="h-10 w-auto object-contain" />
+              <div>
+                <h2 className="text-base font-semibold text-foreground">AXA-PRISM</h2>
+                <p className="text-xs text-muted-foreground">Insurance Analytics</p>
+              </div>
+            </Link>
           </div>
         </div>
 

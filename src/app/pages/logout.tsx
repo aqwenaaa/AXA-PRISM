@@ -22,8 +22,7 @@ export default function LogoutPage() {
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
       {/* Animated background */}
       <motion.div
-        className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/30 via-primary/20 to-transparent rounded-full blur-[120px] pointer-events-none"
-        animate={{
+        className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#8A70D6]/30 via-[#6B4FC8]/20 to-[#1E3A8A]/20 rounded-full blur-[120px] pointer-events-none" animate={{
           scale: [1, 1.2, 1],
           opacity: [0.3, 0.5, 0.3],
         }}
@@ -34,7 +33,7 @@ export default function LogoutPage() {
         }}
       />
       <motion.div
-        className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-primary/20 via-success/20 to-transparent rounded-full blur-[120px] pointer-events-none"
+        className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#8A70D6]/20 via-[#1E3A8A]/20 to-transparent rounded-full blur-[120px] pointer-events-none"
         animate={{
           scale: [1, 1.3, 1],
           opacity: [0.2, 0.4, 0.2],
@@ -47,7 +46,7 @@ export default function LogoutPage() {
         }}
       />
       <motion.div
-        className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-br from-success/10 via-primary/15 to-transparent rounded-full blur-[150px] pointer-events-none"
+        className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-br from-[#1E3A8A]/10 via-[#8A70D6]/15 to-transparent rounded-full blur-[150px] pointer-events-none"
         animate={{
           scale: [1, 1.1, 1],
           x: [-200, -150, -200],
@@ -115,7 +114,7 @@ export default function LogoutPage() {
           >
             <div className="relative">
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-primary to-success rounded-full blur-2xl opacity-50"
+                className="absolute inset-0 bg-gradient-to-r from-[#8A70D6] to-[#1E3A8A] rounded-full blur-2xl opacity-50"
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.5, 0.7, 0.5],
@@ -126,8 +125,7 @@ export default function LogoutPage() {
                   ease: "easeInOut"
                 }}
               />
-              <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary via-primary to-primary/70 flex items-center justify-center shadow-xl shadow-primary/30">
-                <CheckCircle2 className="w-12 h-12 text-white" />
+              <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#8A70D6] via-[#6B4FC8] to-[#1E3A8A] flex items-center justify-center shadow-xl shadow-primary/30">                <CheckCircle2 className="w-12 h-12 text-white" />
               </div>
             </div>
           </motion.div>
@@ -140,18 +138,21 @@ export default function LogoutPage() {
             transition={{ duration: 0.6, delay: 0.5 }}
           >
             <h1 className="text-4xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-foreground via-primary to-success bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#8A70D6] via-[#6B4FC8] to-[#1E3A8A] bg-clip-text text-transparent">
                 You've Been Logged Out
               </span>
             </h1>
-            <p className="text-lg text-foreground/60 mb-8 leading-relaxed">
-              Thank you for using AXA-PRISM. Your session has been securely terminated and all data has been protected.
+            <p className="text-lg text-foreground/60 mb-2 leading-relaxed">
+              Thank you for using AXA-PRISM.
+            </p>
+            <p className="text-lg text-foreground/60 mb-6 leading-relaxed">
+              Your session has been securely terminated and all data has been protected.
             </p>
           </motion.div>
 
           {/* Session Summary */}
           <motion.div
-            className="relative z-10 grid grid-cols-3 gap-4 mb-8 p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-success/5 to-primary/5 border border-primary/10"
+            className="relative z-10 grid grid-cols-3 gap-4 mb-8 p-6 rounded-2xl bg-gradient-to-r from-[#8A70D6]/5 via-[#6B4FC8]/5 to-[#1E3A8A]/5 border border-[#8A70D6]/10"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.7 }}
@@ -188,7 +189,7 @@ export default function LogoutPage() {
               whileTap={{ scale: 0.95 }}
             >
               <Link href="/login">
-                <Button className="bg-gradient-to-r from-primary to-primary/80 text-white px-8 py-6 text-base hover:shadow-xl hover:shadow-primary/30 transition-all">
+                <Button className="bg-gradient-to-r from-[#8A70D6] to-[#1E3A8A] text-white px-8 py-6 text-base hover:shadow-xl hover:shadow-primary/30 transition-all">
                   <LogIn className="mr-2 w-5 h-5" />
                   Log In Again
                 </Button>
@@ -199,7 +200,7 @@ export default function LogoutPage() {
               whileTap={{ scale: 0.95 }}
             >
               <Link href="/">
-                <Button variant="outline" className="px-8 py-6 text-base border-primary/30 hover:bg-primary/5">
+                <Button variant="outline" className="px-8 py-6 text-base border-[#8A70D6]/30 hover:bg-[#8A70D6]/5">
                   <Home className="mr-2 w-5 h-5" />
                   Back to Home
                 </Button>
@@ -214,7 +215,7 @@ export default function LogoutPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 1.1 }}
           >
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-[#8A70D6] animate-pulse" />
             <span>Your data has been encrypted and securely stored</span>
           </motion.div>
         </motion.div>
@@ -226,9 +227,9 @@ export default function LogoutPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 1.3 }}
         >
-          <Link href="/about-axa" className="hover:text-primary transition-colors">About AXA</Link>
-          <Link href="/security" className="hover:text-primary transition-colors">Security</Link>
-          <Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link>
+          <Link href="/about-axa" className="hover:text-[#8A70D6] transition-colors">About AXA</Link>
+          <Link href="/security" className="hover:text-[#8A70D6] transition-colors">Security</Link>
+          <Link href="/faq" className="hover:text-[#8A70D6] transition-colors">FAQ</Link>
         </motion.div>
 
         {/* Branding */}

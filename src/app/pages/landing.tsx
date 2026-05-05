@@ -1,52 +1,53 @@
+"use client";
+
+import Link from "next/link";
 import { Button } from "../components/ui/button";
 import { Play, Upload, Activity, Cross, BarChart3, ArrowRight, Heart, Stethoscope, Pill, Shield, Brain, TrendingUp, Users, FileText, Clipboard, HeartPulse, Ambulance, Hospital, UserCheck } from "lucide-react";
-import { Link } from "react-router";
 import { motion } from "motion/react";
-import React, { useEffect, useState } from "react";
-
-const heroBackgrounds = [
-  "https://images.unsplash.com/photo-1776571662270-eb80bb451cd4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
-  "https://images.unsplash.com/photo-1776659959825-59d28b50dd65?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
-  "https://images.unsplash.com/photo-1764885517847-79d62138cc58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
-  "https://images.unsplash.com/photo-1764885449418-db6632922a19?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
-  "https://images.unsplash.com/photo-1769147555720-71fc71bfc216?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
-];
 
 export default function LandingPage() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroBackgrounds.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="relative">
-        {/* Background Image Slider */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden">
-          <div className="absolute inset-0 w-full h-full">
-            <div
-              className="w-full h-full bg-cover bg-center bg-no-repeat transition-all duration-1000"
-              style={{ backgroundImage: `url(${heroBackgrounds[currentSlide]})` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/70 to-white/80" />
-          </div>
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-            {heroBackgrounds.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  index === currentSlide ? "bg-white w-8 scale-110" : "bg-white/60 hover:bg-white/80"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
+      {/* Animated purple glowing orbs background */}
+      <motion.div
+        className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/30 via-primary/20 to-transparent rounded-full blur-[120px] pointer-events-none"
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      <motion.div
+        className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-primary/20 via-success/10 to-transparent rounded-full blur-[120px] pointer-events-none"
+        animate={{
+          scale: [1, 1.3, 1],
+          opacity: [0.2, 0.4, 0.2],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1
+        }}
+      />
+      <motion.div
+        className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-br from-warning/10 via-primary/10 to-transparent rounded-full blur-[150px] pointer-events-none"
+        animate={{
+          scale: [1, 1.1, 1],
+          x: [0, 50, 0],
+          y: [0, -50, 0],
+        }}
+        transition={{
+          duration: 12,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2
+        }}
+      />
 
       {/* Navbar */}
       <nav className="sticky top-0 z-50 glass backdrop-blur-xl border-b border-border">
@@ -70,10 +71,10 @@ export default function LandingPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <a href="#solutions" className="text-sm text-foreground/70 hover:text-foreground transition-colors">Solutions</a>
-            <Link to="/healthcare" className="text-sm text-foreground/70 hover:text-foreground transition-colors">Healthcare</Link>
-            <Link to="/about-axa" className="text-sm text-foreground/70 hover:text-foreground transition-colors">About AXA</Link>
-            <Link to="/security" className="text-sm text-foreground/70 hover:text-foreground transition-colors">Security</Link>
-            <Link to="/faq" className="text-sm text-foreground/70 hover:text-foreground transition-colors">FAQ</Link>
+            <Link href="/healthcare" className="text-sm text-foreground/70 hover:text-foreground transition-colors">Healthcare</Link>
+            <Link href="/about-axa" className="text-sm text-foreground/70 hover:text-foreground transition-colors">About AXA</Link>
+            <Link href="/security" className="text-sm text-foreground/70 hover:text-foreground transition-colors">Security</Link>
+            <Link href="/faq" className="text-sm text-foreground/70 hover:text-foreground transition-colors">FAQ</Link>
           </motion.div>
 
           <motion.div
@@ -81,7 +82,7 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Link to="/login">
+            <Link href="/login">
               <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:shadow-lg hover:shadow-primary/10 transition-all">
                 Login
               </Button>
@@ -91,7 +92,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-20 pb-32 relative z-10">
+      <section className="max-w-7xl mx-auto px-6 pt-20 pb-32 relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <motion.div
@@ -140,7 +141,7 @@ export default function LandingPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link to="/login">
+                <Link href="/login">
                   <Button className="bg-gradient-to-r from-primary to-success text-white px-8 py-6 text-base hover:shadow-xl hover:shadow-primary/30 transition-all">
                     Get Started
                     <ArrowRight className="ml-2 w-5 h-5" />
@@ -151,7 +152,7 @@ export default function LandingPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link to="/healthcare">
+                <Link href="/healthcare">
                   <Button variant="outline" className="px-8 py-6 text-base border-primary/30 hover:bg-primary/5">
                     <HeartPulse className="mr-2 w-5 h-5" />
                     Healthcare Info
@@ -187,17 +188,17 @@ export default function LandingPage() {
                           i % 7 === 0 ? 'bg-gradient-to-br from-destructive to-warning shadow-lg shadow-destructive/50' : 'bg-gradient-to-br from-primary/60 to-success/40'
                         }`}
                         style={{
-                          left: `${Math.random() * 80 + 10}%`,
-                          top: `${Math.random() * 80 + 10}%`,
+                          left: `${((i * 37) % 80) + 10}%`,
+                          top: `${((i * 53) % 80) + 10}%`,
                         }}
                         animate={{
                           scale: i % 7 === 0 ? [1, 1.3, 1] : [1, 1.1, 1],
                           opacity: [0.7, 1, 0.7],
                         }}
                         transition={{
-                          duration: 2 + Math.random() * 2,
+                          duration: 2 + ((i % 5) * 0.35),
                           repeat: Infinity,
-                          delay: Math.random() * 2,
+                          delay: (i % 6) * 0.25,
                         }}
                       />
                     ))}
@@ -320,7 +321,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      </div>
 
       {/* Trust Bar */}
       <section className="border-y border-border bg-gradient-to-r from-white/50 via-primary/5 to-white/50 backdrop-blur-sm py-8">
@@ -637,7 +637,7 @@ export default function LandingPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Link to="/login">
+              <Link href="/login">
                 <Button className="bg-gradient-to-r from-primary to-success text-white px-10 py-6 text-base hover:shadow-2xl hover:shadow-primary/30 transition-all">
                   Start Using System
                   <ArrowRight className="ml-2 w-5 h-5" />

@@ -1,3 +1,5 @@
+"use client";
+
 import { TrendingUp, Sparkles, Calendar, DollarSign, AlertCircle, Activity, ArrowUpRight, Brain } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";

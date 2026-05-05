@@ -1,9 +1,11 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router'; // Pastikan import dari 'react-router' sesuai router kamu
+import { useRouter } from 'next/navigation';
 
 const ChangePassword = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // 1. Pisahkan state untuk masing-masing field agar tidak bertabrakan
   const [showCurrent, setShowCurrent] = useState(false);
@@ -17,13 +19,13 @@ const ChangePassword = () => {
     console.log("Password updated successfully");
 
     // 4. Berpindah ke page profile setelah klik Save Changes
-    navigate('/profile'); 
+    router.push('/profile'); 
   };
 
   return (
     <div className="min-h-screen bg-[#F8F9FE] p-6 lg:p-10">
       <button 
-        onClick={() => navigate('/profile')}
+          onClick={() => router.push('/profile')}
         className="flex items-center gap-2 text-slate-500 hover:text-[#8B5CF6] mb-8 transition-colors group"
       >
         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
@@ -110,7 +112,7 @@ const ChangePassword = () => {
             <div className="pt-4 flex items-center justify-end gap-4">
               <button 
                 type="button"
-                onClick={() => navigate('/profile')}
+                onClick={() => router.push('/profile')}
                 className="px-6 py-2.5 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
               >
                 Cancel

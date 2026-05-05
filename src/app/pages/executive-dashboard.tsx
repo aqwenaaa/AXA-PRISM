@@ -1,3 +1,5 @@
+"use client";
+
 import { TrendingUp, DollarSign, Shield, Target, ArrowUpRight, CheckCircle2, AlertTriangle, TrendingDown } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";

@@ -1,6 +1,8 @@
+"use client";
+
+import Link from "next/link";
 import { Button } from "../components/ui/button";
 import { ArrowLeft, Heart, Shield, FileText, UserCheck, Stethoscope, Activity, Hospital, Ambulance, Pill, HeartPulse, Clipboard, CheckCircle2 } from "lucide-react";
-import { Link } from "react-router";
 import { motion } from "motion/react";
 
 export default function HealthcarePage() {
@@ -36,14 +38,14 @@ export default function HealthcarePage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 glass backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-success flex items-center justify-center shadow-lg shadow-primary/20">
               <Heart className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-semibold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">AXA-PRISM</span>
           </Link>
 
-          <Link to="/">
+          <Link href="/">
             <Button variant="ghost" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back to Home
@@ -367,7 +369,7 @@ export default function HealthcarePage() {
             <p className="text-lg text-foreground/60 mb-8">
               Experience the future of health insurance with AI-powered claim processing
             </p>
-            <Link to="/login">
+            <Link href="/login">
               <Button className="bg-gradient-to-r from-primary to-success text-white px-10 py-6 text-base hover:shadow-xl hover:shadow-primary/20 transition-all">
                 Start Now
                 <ArrowLeft className="ml-2 w-5 h-5 rotate-180" />
@@ -386,10 +388,10 @@ export default function HealthcarePage() {
               <span className="text-sm text-foreground/60">© 2026 AXA-PRISM. All rights reserved.</span>
             </div>
             <div className="flex gap-6 text-sm text-foreground/60">
-              <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-              <Link to="/about-axa" className="hover:text-primary transition-colors">About AXA</Link>
-              <Link to="/security" className="hover:text-primary transition-colors">Security</Link>
-              <Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link>
+              <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+              <Link href="/about-axa" className="hover:text-primary transition-colors">About AXA</Link>
+              <Link href="/security" className="hover:text-primary transition-colors">Security</Link>
+              <Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link>
             </div>
           </div>
         </div>

@@ -1,5 +1,8 @@
+"use client";
+
+import Link from "next/link";
 import { useState } from "react";
-import { useNavigate, Link } from "react-router";
+import { useRouter } from "next/navigation";
 import { Mail, ArrowRight, Shield, ArrowLeft, CheckCircle2, Send } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -7,7 +10,7 @@ import { Input } from "../components/ui/input";
 type Stage = "input" | "sent";
 
 export default function ForgotPasswordPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [stage, setStage] = useState<Stage>("input");
   const [loading, setLoading] = useState(false);
@@ -161,7 +164,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="mt-6 pt-5 border-t border-border">
                   <Link
-                    to="/login"
+                    href="/login"
                     className="flex items-center justify-center gap-2 text-sm text-[#8A70D6] hover:text-[#1E3A8A] transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
@@ -203,7 +206,7 @@ export default function ForgotPasswordPage() {
 
                 {/* Simulate "open link from email" */}
                 <Button
-                  onClick={() => navigate("/reset-password")}
+                  onClick={() => router.push("/reset-password")}
                   className="w-full h-12 bg-gradient-to-r from-[#8A70D6] to-[#1E3A8A] hover:opacity-90 text-white rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mb-4"
                 >
                   <ArrowRight className="w-4 h-4" />
@@ -219,7 +222,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="mt-6 pt-5 border-t border-border">
                   <Link
-                    to="/login"
+                    href="/login"
                     className="flex items-center justify-center gap-2 text-sm text-[#8A70D6] hover:text-[#1E3A8A] transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />

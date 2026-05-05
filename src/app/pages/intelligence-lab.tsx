@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Brain, TrendingUp, Award, AlertTriangle, Settings } from "lucide-react";
 import { Card } from "../components/ui/card";

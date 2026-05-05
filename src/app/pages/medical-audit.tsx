@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Stethoscope, AlertTriangle, Clock, Building2, FileText, CheckCircle2, XCircle, AlertCircle, Zap } from "lucide-react";
 import { Card } from "../components/ui/card";
@@ -206,7 +208,9 @@ export default function MedicalAuditPage() {
                     </div>
                     <div>
                       <div className="font-medium">{selectedClaim.patient}</div>
-                      <div className="text-xs text-muted-foreground">Member ID: MBR-2024-{Math.floor(Math.random() * 10000)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Member ID: MBR-2024-{selectedClaim.id.replace(/\D/g, "").padStart(4, "0").slice(-4)}
+                      </div>
                     </div>
                   </div>
                   

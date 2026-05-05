@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Lock,
   Eye,
@@ -28,7 +31,7 @@ const rules: StrengthRule[] = [
 type Stage = "form" | "success";
 
 export default function ResetPasswordPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNew, setShowNew] = useState(false);
@@ -82,14 +85,14 @@ export default function ResetPasswordPage() {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(timer);
-          navigate("/login");
+          router.push("/login");
           return 0;
         }
         return c - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [stage, navigate]);
+  }, [stage, router]);
 
   return (
     <div className="h-screen flex">
@@ -337,7 +340,7 @@ export default function ResetPasswordPage() {
 
                 <div className="mt-6 pt-5 border-t border-border">
                   <Link
-                    to="/forgot-password"
+                    href="/forgot-password"
                     className="flex items-center justify-center gap-2 text-sm text-[#8A70D6] hover:text-[#1E3A8A] transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
@@ -370,7 +373,7 @@ export default function ResetPasswordPage() {
                 </div>
 
                 <Button
-                  onClick={() => navigate("/login")}
+                  onClick={() => router.push("/login")}
                   className="w-full h-12 bg-gradient-to-r from-[#8A70D6] to-[#1E3A8A] hover:opacity-90 text-white rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                 >
                   <ArrowRight className="w-4 h-4" />

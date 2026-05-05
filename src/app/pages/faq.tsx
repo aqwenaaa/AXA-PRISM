@@ -1,6 +1,8 @@
+"use client";
+
+import Link from "next/link";
 import { Button } from "../components/ui/button";
 import { ArrowLeft, Heart, ChevronDown } from "lucide-react";
-import { Link } from "react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
 
@@ -123,14 +125,14 @@ export default function FAQPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 glass backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-success/50 flex items-center justify-center shadow-lg shadow-primary/20">
               <Heart className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-semibold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">AXA-PRISM</span>
           </Link>
 
-          <Link to="/">
+          <Link href="/">
             <Button variant="ghost" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back to Home
@@ -253,9 +255,9 @@ export default function FAQPage() {
               <span className="text-sm text-foreground/60">© 2026 AXA-PRISM. All rights reserved.</span>
             </div>
             <div className="flex gap-6 text-sm text-foreground/60">
-              <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-              <Link to="/about-axa" className="hover:text-primary transition-colors">About AXA</Link>
-              <Link to="/security" className="hover:text-primary transition-colors">Security</Link>
+              <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+              <Link href="/about-axa" className="hover:text-primary transition-colors">About AXA</Link>
+              <Link href="/security" className="hover:text-primary transition-colors">Security</Link>
             </div>
           </div>
         </div>

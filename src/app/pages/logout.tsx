@@ -1,6 +1,8 @@
+"use client";
+
+import Link from "next/link";
 import { Button } from "../components/ui/button";
 import { Heart, CheckCircle2, ArrowRight, Home, LogIn } from "lucide-react";
-import { Link } from "react-router";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 
@@ -75,8 +77,8 @@ export default function LogoutPage() {
               animate={{
                 opacity: [1, 1, 0],
                 scale: [0, 1, 0.5],
-                x: [0, (Math.random() - 0.5) * 400],
-                y: [0, (Math.random() - 0.5) * 400],
+                x: [0, (((i * 41) % 100) - 50) * 4],
+                y: [0, (((i * 67) % 100) - 50) * 4],
               }}
               transition={{
                 duration: 2,
@@ -185,7 +187,7 @@ export default function LogoutPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Link to="/login">
+              <Link href="/login">
                 <Button className="bg-gradient-to-r from-primary to-primary/80 text-white px-8 py-6 text-base hover:shadow-xl hover:shadow-primary/30 transition-all">
                   <LogIn className="mr-2 w-5 h-5" />
                   Log In Again
@@ -196,7 +198,7 @@ export default function LogoutPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Link to="/">
+              <Link href="/">
                 <Button variant="outline" className="px-8 py-6 text-base border-primary/30 hover:bg-primary/5">
                   <Home className="mr-2 w-5 h-5" />
                   Back to Home
@@ -224,9 +226,9 @@ export default function LogoutPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 1.3 }}
         >
-          <Link to="/about-axa" className="hover:text-primary transition-colors">About AXA</Link>
-          <Link to="/security" className="hover:text-primary transition-colors">Security</Link>
-          <Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link>
+          <Link href="/about-axa" className="hover:text-primary transition-colors">About AXA</Link>
+          <Link href="/security" className="hover:text-primary transition-colors">Security</Link>
+          <Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link>
         </motion.div>
 
         {/* Branding */}

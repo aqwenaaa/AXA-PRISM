@@ -1,11 +1,14 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "../components/ui/button";
 import { ArrowLeft, User, Mail, Phone, Building2, Shield, Edit, Camera, Save, Bell, Lock } from "lucide-react";
-import { Link, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
 
   return (
@@ -16,7 +19,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => router.back()}
                 className="p-2 hover:bg-white/50 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -268,7 +271,7 @@ export default function ProfilePage() {
                   </label>
                 </div>
 
-                <Link to="/change-password">
+                <Link href="/change-password">
                   <div className="flex items-center justify-between p-4 rounded-xl hover:bg-muted/30 transition-colors cursor-pointer">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">

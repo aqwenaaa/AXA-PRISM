@@ -1,12 +1,15 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Lock, User, ArrowRight, Shield } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Checkbox } from "../components/ui/checkbox";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -40,7 +43,7 @@ export default function LoginPage() {
     }
     
     // Navigate to data ingestion page after login
-    navigate("/data-ingestion");
+    router.push("/operator/data-ingestion");
   };
 
   return (
@@ -150,7 +153,7 @@ export default function LoginPage() {
                     Remember me
                   </label>
                 </div>
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>

@@ -2,6 +2,9 @@ import { TrendingUp, Sparkles, Calendar, DollarSign, AlertCircle, Activity, Arro
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 // Monthly claim growth data
@@ -74,7 +77,71 @@ const aiInsights = [
   }
 ];
 
+// FUNGSI EKSPOR EXCEL (.xlsx)
+  const exportToExcel = () => {
+    // 1. Buat worksheet dari data monthlyGrowthData
+    const worksheet = XLSX.utils.json_to_sheet(monthlyGrowthData);
+    
+    // 2. Buat workbook baru
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Monthly Claims");
+    
+    // 3. Tambahkan sheet kedua untuk Category Analysis
+    const catWorksheet = XLSX.utils.json_to_sheet(categoryData);
+    XLSX.utils.book_append_sheet(workbook, catWorksheet, "Category Analysis");
+
+    // 4. Download file
+    XLSX.writeFile(workbook, "AXA_Claim_Analysis_2026.xlsx");
+  };
+
+
 export default function ClaimGrowthPage() {
+   // FUNGSI EKSPOR PDF (.pdf)
+ const exportToExcel = () => {
+    try {
+      const worksheet = XLSX.utils.json_to_sheet(monthlyGrowthData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Monthly Claims");
+      
+      const catWorksheet = XLSX.utils.json_to_sheet(categoryData);
+      XLSX.utils.book_append_sheet(workbook, catWorksheet, "Category Analysis");
+
+      XLSX.writeFile(workbook, "AXA_Claim_Analysis_2026.xlsx");
+    } catch (error) {
+      console.error("Gagal ekspor Excel:", error);
+    }
+  };
+
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      doc.setFontSize(18);
+      doc.text("AXA Claim Growth Analysis Report", 14, 22);
+      
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Period: Jan 2025 - Apr 2026 | Generated: ${new Date().toLocaleDateString()}`, 14, 30);
+
+      autoTable(doc, {
+        startY: 40,
+        head: [['Month', 'Claims', 'Total Cost', 'Avg Cost']],
+        body: monthlyGrowthData.map(d => [
+          d.month, 
+          d.claims.toLocaleString(), 
+          `$${(d.cost / 1000000).toFixed(1)}M`, 
+          `$${d.avgCost}`
+        ]),
+        headStyles: { fillColor: [139, 92, 246] },
+      });
+
+      doc.save("AXA_Claim_Analysis_Report.pdf");
+    } catch (error) {
+      console.error("Gagal ekspor PDF:", error);
+      alert("Terjadi kesalahan saat membuat PDF. Cek konsol browser.");
+    }
+  };
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -97,23 +164,6 @@ export default function ClaimGrowthPage() {
               +25.5% YoY Growth
             </Badge>
           </div>
-        </div>
-
-        {/* Action Buttons (Export) */}
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 shadow-sm"
-          >
-            <FileDown size={18} />
-            Export .xlsx
-          </Button>
-          <Button 
-            className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-lg shadow-purple-200 transition-all active:scale-95"
-          >
-            <FileText size={18} />
-            Export .pdf
-          </Button>
         </div>
       </div>
 
@@ -385,24 +435,48 @@ export default function ClaimGrowthPage() {
         </div>
       </Card>
 
-      {/* Summary Alert */}
+      {/* Summary Alert & Export Buttons at the Bottom */}
       <Card className="p-6 bg-gradient-to-br from-warning/5 via-amber-50 to-orange-50 rounded-xl border-2 border-warning/30">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-warning flex items-center justify-center flex-shrink-0">
             <AlertCircle className="w-6 h-6 text-white" />
           </div>
+          
           <div className="flex-1">
             <h3 className="text-lg font-semibold mb-2">Executive Summary</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-6 max-w-4xl">
               AXA health insurance claims have experienced a <strong className="text-foreground">25.5% year-over-year growth</strong> driven by
               cardiovascular and oncology categories, with total claims reaching <strong className="text-foreground">203,350 cases</strong> and
               costs totaling <strong className="text-foreground">$412M</strong> over 16 months. AI analysis identifies <strong className="text-foreground">$12.5M
               in potential savings</strong> through preventive programs, provider negotiations, and enhanced pre-authorization protocols.
             </p>
-            <div className="flex flex-wrap gap-2">
-              <Badge className="bg-warning text-white">Action Required</Badge>
-              <Badge className="bg-primary/10 text-primary border-primary/20">Strategic Review Recommended</Badge>
-              <Badge className="bg-success/10 text-success border-success/20">Optimization Opportunities Identified</Badge>
+            
+            {/* Bagian Bawah: Badge di kiri, Tombol di kanan (Sejajar) */}
+            <div className="flex flex-col sm:flex-row justify-between items-end gap-4">
+              <div className="flex flex-wrap gap-2">
+                <Badge className="bg-warning text-white">Action Required</Badge>
+                <Badge className="bg-primary/10 text-primary border-primary/20">Strategic Review Recommended</Badge>
+                <Badge className="bg-success/10 text-success border-success/20">Optimization Opportunities Identified</Badge>
+              </div>
+
+              {/* TOMBOL DISAMBUNGKAN DI SINI */}
+              <div className="flex gap-3 w-full sm:w-auto">
+                <Button 
+                  onClick={exportToExcel}
+                  variant="outline" 
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-primary/20 text-primary hover:bg-primary/5 bg-white shadow-sm"
+                >
+                  <FileDown size={18} />
+                  Export .xlsx
+                </Button>
+                <Button 
+                  onClick={exportToPDF}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-lg shadow-purple-200 transition-all active:scale-95"
+                >
+                  <FileText size={18} />
+                  Export .pdf
+                </Button>
+              </div>
             </div>
           </div>
         </div>

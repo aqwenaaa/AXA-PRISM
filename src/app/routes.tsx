@@ -15,6 +15,7 @@ import MedicalAuditPage from "./pages/medical-audit";
 import ExecutiveDashboardPage from "./pages/executive-dashboard";
 import ClaimGrowthPage from "./pages/claim-growth";
 import ModelDebugPage from "./pages/model-debug";
+import UserManagementPage from "./pages/user-management";
 import { DashboardLayout } from "./components/dashboard-layout";
 
 export const router = createBrowserRouter([
@@ -84,6 +85,10 @@ export const router = createBrowserRouter([
       {
         path: "profile",
         Component: ProfilePage,
+      },
+      {
+        path: "user-management",
+        Component: UserManagementPage,
       },
     ],
   },

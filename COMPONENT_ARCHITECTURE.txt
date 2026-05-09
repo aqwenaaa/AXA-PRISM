@@ -1,0 +1,337 @@
+```
+╔════════════════════════════════════════════════════════════════════════════════╗
+║           🎯 USER ROLE MANAGEMENT SYSTEM - COMPONENT ARCHITECTURE             ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  APPLICATION ROUTING STRUCTURE                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  routes.tsx                                                                 │
+│  ├── / .......................... LandingPage                               │
+│  ├── /login ..................... LoginPage                                │
+│  ├── /about-axa ................. AboutAXAPage                             │
+│  ├── /security .................. SecurityPage                             │
+│  ├── /faq ....................... FAQPage                                  │
+│  │                                                                         │
+│  ├── [DashboardLayout] .......... Main dashboard container                 │
+│  │   ├── /data-ingestion ........ DataIngestionPage                       │
+│  │   ├── /intelligence-lab ...... IntelligenceLabPage                     │
+│  │   ├── /medical-audit ......... MedicalAuditPage                        │
+│  │   ├── /executive-dashboard ... ExecutiveDashboardPage                  │
+│  │   ├── /claim-growth .......... ClaimGrowthPage                         │
+│  │   ├── /model-debug ........... ModelDebugPage                          │
+│  │   ├── /profile ............... ProfilePage                             │
+│  │   └── /user-management ....... UserManagementPage ✨ [NEW]             │
+│  │       └── <UserRoleTable />   (Component)                              │
+│  │                                                                         │
+│  └── ...                                                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  COMPONENT TREE - USER MANAGEMENT PAGE                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  UserManagementPage                                                         │
+│  ├─ motion.div (animated background)                                        │
+│  ├─ nav (sticky navbar)                                                     │
+│  └─ section (main content)                                                  │
+│     ├─ motion.div (hero title)                                              │
+│     ├─ motion.div (stat cards grid)                                         │
+│     │  ├─ Card: Total Users (5)                                             │
+│     │  ├─ Card: Roles (5)                                                   │
+│     │  └─ Card: Active Sessions (3)                                         │
+│     │                                                                       │
+│     ├─ motion.div (main table section)                                      │
+│     │  └─ UserRoleTable ..................... ✨ [MAIN COMPONENT]          │
+│     │     ├─ AnimatePresence                                                │
+│     │     │  └─ motion.div (toast notification)                             │
+│     │     │     ├─ Check icon                                               │
+│     │     │     └─ Text: "Peran berhasil diubah!"                           │
+│     │     │                                                                 │
+│     │     ├─ div.glass (table container)                                    │
+│     │     │  └─ Table                                                       │
+│     │     │     ├─ TableHeader                                              │
+│     │     │     │  └─ TableRow                                              │
+│     │     │     │     ├─ TableHead: Nama                                    │
+│     │     │     │     ├─ TableHead: Email                                   │
+│     │     │     │     ├─ TableHead: Role Saat Ini                           │
+│     │     │     │     ├─ TableHead: Ubah Role                               │
+│     │     │     │     └─ TableHead: Aksi                                    │
+│     │     │     │                                                           │
+│     │     │     └─ TableBody                                                │
+│     │     │        └─ motion.tr (foreach user)                              │
+│     │     │           ├─ TableCell: user.name                               │
+│     │     │           ├─ TableCell: user.email                              │
+│     │     │           ├─ TableCell: role badge                              │
+│     │     │           ├─ TableCell: dropdown menu                           │
+│     │     │           │  ├─ DropdownMenuTrigger                             │
+│     │     │           │  │  └─ motion.button (with ChevronDown icon)       │
+│     │     │           │  └─ DropdownMenuContent                             │
+│     │     │           │     └─ DropdownMenuItem (foreach ROLE)              │
+│     │     │           │        ├─ role.label                                │
+│     │     │           │        └─ Check icon (if current)                   │
+│     │     │           │                                                    │
+│     │     │           └─ TableCell: update button                           │
+│     │     │              ├─ IF pendingRole != currentRole                   │
+│     │     │              │  └─ motion.button "Update"                       │
+│     │     │              └─ ELSE                                            │
+│     │     │                 └─ span "Tidak ada perubahan"                    │
+│     │     │                                                                 │
+│     │     └─ Info box (panduan penggunaan)                                  │
+│     │                                                                       │
+│     └─ section (features showcase)                                          │
+│        ├─ Feature Card 1: Dropdown Menu Responsif                           │
+│        ├─ Feature Card 2: Real-time Update                                  │
+│        ├─ Feature Card 3: Toast Notification                                │
+│        └─ Feature Card 4: Supabase Ready                                    │
+│                                                                             │
+│  └─ Footer section (security notes)                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STATE MANAGEMENT DIAGRAM                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  UserRoleTable Component Internal State:                                    │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ useState<UserWithPendingRole[]>                                     │   │
+│  │ ├─ users[0]: { id: "1", name: "John Doe", currentRole: "admin",  │   │
+│  │ │             email: "john.doe@axa.com", pendingRole: undefined } │   │
+│  │ ├─ users[1]: { id: "2", name: "Sarah Johnson", currentRole: ... } │   │
+│  │ ├─ users[2]: { id: "3", name: "Michael Chen", ... }               │   │
+│  │ ├─ users[3]: { id: "4", name: "Emma Wilson", ... }                │   │
+│  │ └─ users[4]: { id: "5", name: "Robert Garcia", ... }              │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ useState<UpdateNotification>                                        │   │
+│  │ {                                                                   │   │
+│  │   visible: false,              ← Controls toast visibility         │   │
+│  │   userId: "2",                 ← Which user was updated            │   │
+│  │   userName: "Sarah Johnson",    ← Display name for toast           │   │
+│  │   newRole: "Risk Analyst"       ← Show new role in toast           │   │
+│  │ }                                                                   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  STATE FLOW:                                                                │
+│                                                                             │
+│  User Interaction          Handler Function          State Update           │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                             │
+│  1️⃣  Klik Dropdown    →  (internal dropdown logic)  →  [no state change]   │
+│                                                                             │
+│  2️⃣  Pilih Role      →  handleRoleChange(id, role) →  users[i].pendingRole │
+│                                                        = newRole            │
+│                                                                             │
+│  3️⃣  Klik Update     →  handleRoleUpdate(id, role) →  users[i].currentRole │
+│                                                        = newRole            │
+│                                                        pendingRole = undef   │
+│                                                        + toast visible!      │
+│                                                                             │
+│  4️⃣  Wait 4 sec     →  setTimeout callback        →  toast.visible        │
+│                                                        = false               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  EVENT HANDLER FLOW DIAGRAM                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │  handleRoleChange(userId, newRole)                             │       │
+│  ├─────────────────────────────────────────────────────────────────┤       │
+│  │  • Triggered by: DropdownMenuItem onClick                      │       │
+│  │  • Action: setUsers() with pendingRole updated                 │       │
+│  │  • Result: Dropdown selection captured in state                │       │
+│  │  • Console: (no logging)                                       │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+│                          ↓                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │  handleRoleUpdate(userId, newRole)                             │       │
+│  ├─────────────────────────────────────────────────────────────────┤       │
+│  │  1. Find user object                                           │       │
+│  │  2. console.log("🔄 Mengubah user X menjadi role Y")          │       │
+│  │  3. Try/catch block                                            │       │
+│  │     a) Supabase update (commented - ready to activate)        │       │
+│  │     b) Update local state (currentRole = newRole)              │       │
+│  │     c) Set toast notification visible                          │       │
+│  │     d) setTimeout(4000) to hide toast                          │       │
+│  │  4. catch: log error to console                                │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+│                          ↓                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │  Component Re-render                                           │       │
+│  ├─────────────────────────────────────────────────────────────────┤       │
+│  │  • Table rows re-render with new data                          │       │
+│  │  • Role badge changes color                                    │       │
+│  │  • Toast animation plays in                                    │       │
+│  │  • Update button disappears (pendingRole cleared)              │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+│                          ↓                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │  Toast Auto-hide (setTimeout callback)                         │       │
+│  ├─────────────────────────────────────────────────────────────────┤       │
+│  │  • Triggered after 4 seconds                                   │       │
+│  │  • setUpdateNotification({ ...visible: false })                │       │
+│  │  • Toast animation exits                                       │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  DATA TYPES & INTERFACES                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  interface User {                                                           │
+│    id: string                    // Unique identifier                      │
+│    name: string                  // User display name                      │
+│    email: string                 // User email address                     │
+│    currentRole: RoleType          // Current role (active)                  │
+│    joinDate: string              // When user joined                       │
+│  }                                                                          │
+│                                                                             │
+│  interface UserWithPendingRole extends User {                              │
+│    pendingRole?: string          // Pending role before commit             │
+│  }                                                                          │
+│                                                                             │
+│  type RoleType =                                                            │
+│    | "data_operator"                                                        │
+│    | "risk_analyst"                                                         │
+│    | "medical_auditor"                                                      │
+│    | "strategic_manager"                                                    │
+│    | "admin"                                                                │
+│                                                                             │
+│  const AVAILABLE_ROLES = [                                                 │
+│    { value: "data_operator", label: "Data Operator" },                     │
+│    { value: "risk_analyst", label: "Risk Analyst" },                       │
+│    { value: "medical_auditor", label: "Medical Auditor" },                 │
+│    { value: "strategic_manager", label: "Strategic Manager" },             │
+│    { value: "admin", label: "Admin" },                                     │
+│  ]                                                                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  RESPONSIVE LAYOUT STRUCTURE                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  MOBILE (< 768px)              TABLET (768-1024px)      DESKTOP (> 1024px) │
+│  ┌──────────────────┐          ┌──────────────────┐     ┌──────────────┐  │
+│  │                  │          │                  │     │              │  │
+│  │   [Logo]   [Back]│          │ [Logo]     [Back]│     │ [Logo] [Back]│  │
+│  │                  │          │                  │     │              │  │
+│  ├──────────────────┤          ├──────────────────┤     ├──────────────┤  │
+│  │   Title          │          │   Title          │     │   Title      │  │
+│  │ Description      │          │   Description    │     │   Descript   │  │
+│  │                  │          │                  │     │              │  │
+│  ├──────────────────┤          ├──────────────────┤     ├──────────────┤  │
+│  │ [Stat 1]        │          │ [Stat 1] [Stat2] │     │ [St1][St2][St3]
+│  │ [Stat 2]        │          │ [Stat 3]         │     │              │  │
+│  │ [Stat 3]        │          │                  │     │              │  │
+│  │                  │          │                  │     │              │  │
+│  ├──────────────────┤          ├──────────────────┤     ├──────────────┤  │
+│  │  Table (scroll)  │          │   Table         │     │    Table     │  │
+│  │  Dropdown ▼      │          │   Dropdown ▼    │     │  Dropdown ▼  │  │
+│  │  Update btn      │          │   Update btn    │     │  Update btn  │  │
+│  │  ...             │          │   ...           │     │   ...        │  │
+│  │                  │          │                  │     │              │  │
+│  └──────────────────┘          └──────────────────┘     └──────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FILE STRUCTURE                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  src/app/                                                                   │
+│  ├── components/                                                            │
+│  │   ├── ui/                                                                │
+│  │   │   ├── table.tsx (existing)                                           │
+│  │   │   ├── button.tsx (existing)                                          │
+│  │   │   ├── dropdown-menu.tsx (existing)                                   │
+│  │   │   └── ... (other UI components)                                      │
+│  │   │                                                                      │
+│  │   ├── dashboard-layout.tsx (UPDATED - added Users icon & menu item)   │
+│  │   │                                                                      │
+│  │   └── user-role-table.tsx ✨ [NEW]                                      │
+│  │       └─ Export: UserRoleTable (functional component)                    │
+│  │       └─ Size: ~400 lines                                                │
+│  │       └─ State: users[], updateNotification                              │
+│  │       └─ Handlers: handleRoleChange, handleRoleUpdate                    │
+│  │                                                                          │
+│  ├── pages/                                                                 │
+│  │   ├── login.tsx (existing)                                               │
+│  │   ├── profile.tsx (existing)                                             │
+│  │   ├── data-ingestion.tsx (existing)                                      │
+│  │   ├── ... (other pages)                                                  │
+│  │   │                                                                      │
+│  │   └── user-management.tsx ✨ [NEW]                                       │
+│  │       └─ Export: UserManagementPage (default)                            │
+│  │       └─ Size: ~300 lines                                                │
+│  │       └─ Imports: UserRoleTable, motion, lucide-react                    │
+│  │       └─ Uses: DashboardLayout as parent                                 │
+│  │                                                                          │
+│  └── routes.tsx (UPDATED - import & add /user-management route)          │
+│                                                                             │
+│  DOCUMENTATION FILES (ROOT):                                                │
+│  ├── ROLE_MANAGEMENT_DOCS.md ........... Comprehensive guide               │
+│  ├── IMPLEMENTATION_SUMMARY.txt ........ Complete feature list             │
+│  ├── QUICK_REFERENCE.md ............... Code snippets & quick guide        │
+│  └── COMPONENT_ARCHITECTURE.txt ....... This file                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🎨 Color Palette for Role Badges
+
+| Role | Color Code | Badge Class | Hex |
+|------|-----------|------------|-----|
+| Data Operator | Blue | `bg-blue-100 text-blue-800` | #3B82F6 |
+| Risk Analyst | Purple | `bg-purple-100 text-purple-800` | #A855F7 |
+| Medical Auditor | Green | `bg-green-100 text-green-800` | #22C55E |
+| Strategic Manager | Amber | `bg-amber-100 text-amber-800` | #F59E0B |
+| Admin | Red | `bg-red-100 text-red-800` | #EF4444 |
+
+---
+
+## 📊 Animation Layers
+
+```
+Layer 1: Background Motion
+  └─ Animated gradient circles (Framer Motion)
+
+Layer 2: Component Entry
+  └─ Hero title (opacity + y-axis)
+  └─ Stat cards (staggered delay)
+
+Layer 3: Interactive Elements
+  └─ Dropdown (scale on hover)
+  └─ Update button (scale on appear + hover)
+  └─ Table rows (staggered fade-in)
+
+Layer 4: Feedback
+  └─ Toast notification (slide-in + scale)
+  └─ Row hover (background color change)
+
+Layer 5: Exit
+  └─ Toast exit animation (reverse order)
+```
+
+---
+
+**Created for: Interactive Logic Engineer Task**  
+**Component: User Role Management System**  
+**Status: ✅ Complete & Ready for Presentation**

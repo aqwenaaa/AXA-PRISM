@@ -1,0 +1,281 @@
+"""
+🎯 INTERACTIVE USER ROLE MANAGEMENT SYSTEM
+Interactive Logic Engineer - Role Change Table Implementation
+
+================================================================================
+📊 FITUR YANG TELAH DIIMPLEMENTASI
+================================================================================
+
+✅ 1. TABEL INTERAKTIF
+   - Menampilkan daftar 5 user dengan detail lengkap
+   - Kolom: Nama | Email | Role Saat Ini | Ubah Role | Aksi
+   - Animasi smooth saat render dengan staggered delay
+
+✅ 2. DROPDOWN MENU INTERAKTIF  
+   - Component: DropdownMenu dari shadcn/ui
+   - Menampilkan 5 pilihan role:
+     • Data Operator
+     • Risk Analyst  
+     • Medical Auditor
+     • Strategic Manager
+     • Admin
+   - Smooth animation saat membuka/menutup
+   - Icon check (✓) menunjukkan role saat ini
+
+✅ 3. REACT STATE MANAGEMENT
+   File: src/app/components/user-role-table.tsx
+   
+   State Variables:
+   - users: UserWithPendingRole[] - Data user dengan pendingRole
+   - updateNotification: {...visible, userId, userName, newRole}
+   
+   Fungsi Handler:
+   - handleRoleChange(userId, newRole) - Capture pending role change
+   - handleRoleUpdate(userId, newRole) - Commit & show toast
+
+✅ 4. TOAST NOTIFICATION SUKSES
+   - Animasi: Slide-in dari atas-kanan dengan scale (0.95 → 1)
+   - Durasi: Otomatis hilang setelah 4 detik
+   - Menampilkan:
+     • Ikon: ✓ (Check icon)
+     • Pesan: "Peran berhasil diubah!"
+     • Detail: "nama user sekarang adalah role_baru"
+   - Styling: Gradient hijau dengan shadow dan border
+   - Menggunakan Framer Motion AnimatePresence
+
+✅ 5. CONSOLE LOGGING UNTUK TESTING
+   Output contoh:
+   "🔄 Mengubah user Sarah Johnson (ID: 2) menjadi role strategic_manager"
+   
+✅ 6. SUPABASE INTEGRATION (Commented - Ready to Activate)
+   Kode template siap di-uncomment untuk update database:
+   
+   const { error } = await supabase
+     .from('profiles')
+     .update({ role: newRole })
+     .eq('id', userId);
+
+================================================================================
+🎮 USER FLOW - CARA KERJA
+================================================================================
+
+1. USER MEMBUKA HALAMAN
+   └─ Navigasi ke /user-management
+   └─ Halaman dimuat dengan animasi hero section
+   └─ Tabel user muncul dengan animasi staggered
+
+2. USER MELIHAT TABEL
+   ├─ Kolom 1: Nama user
+   ├─ Kolom 2: Email  
+   ├─ Kolom 3: Role Saat Ini (badge dengan warna berbeda per role)
+   ├─ Kolom 4: Dropdown untuk pilih role baru
+   └─ Kolom 5: Tombol "Update" (muncul saat ada perubahan)
+
+3. USER KLIK DROPDOWN
+   ├─ Dropdown animation smooth expand
+   ├─ Menampilkan list 5 role
+   ├─ Highlight role saat ini dengan check icon
+   └─ User bisa scroll jika melebihi viewport
+
+4. USER PILIH ROLE BARU
+   ├─ Dropdown menutup dengan smooth
+   ├─ State `pendingRole` diupdate di React
+   ├─ Tombol "Update" muncul dengan animasi scale (0.9 → 1)
+   └─ Display di dropdown berubah ke role yang dipilih
+
+5. USER KLIK TOMBOL UPDATE
+   ├─ Fungsi handleRoleUpdate dipanggil
+   ├─ Console.log untuk verification/debug
+   ├─ (Optional) Supabase update dipanggil
+   ├─ State `currentRole` diupdate
+   ├─ State `pendingRole` direset ke undefined
+   └─ Toast notification muncul
+
+6. TOAST NOTIFICATION
+   ├─ Animasi slide-in dari atas-kanan
+   ├─ Background: Gradient hijau
+   ├─ Message: "Peran berhasil diubah!"
+   ├─ Detail: Nama user dan role baru
+   └─ Auto-hide setelah 4 detik
+
+7. TABEL TERUPDATE
+   ├─ Row yang diubah di-re-render
+   ├─ Badge role berubah warna sesuai role baru
+   ├─ Dropdown reset ke state normal
+   ├─ Tombol "Update" hilang (tidak ada perubahan pending)
+   └─ User bisa mengubah role user lain
+
+================================================================================
+🎨 ANIMASI & STYLING
+================================================================================
+
+ANIMASI FRAMER MOTION:
+✓ Dropdown Menu: Slide + Fade
+✓ Toast Notification: Slide-in dari top-right + Scale
+✓ Tombol Update: Scale (0.9 → 1) saat muncul  
+✓ Tabel Rows: Staggered fade-in (delay per row)
+✓ Hover Effects: Scale 1.02 pada button, y-offset pada cards
+
+COLOR SCHEME (Role Badges):
+┌─────────────────────────────────────────┐
+│ data_operator       → Blue (#3B82F6)    │
+│ risk_analyst        → Purple (#A855F7)  │
+│ medical_auditor     → Green (#22C55E)   │
+│ strategic_manager   → Amber (#F59E0B)   │
+│ admin               → Red (#EF4444)     │
+└─────────────────────────────────────────┘
+
+BORDER & SHADOW:
+- Table: border-border (subtle gray)
+- Buttons: border dengan hover:bg-muted
+- Toast: border-green-400/50 + shadow-green-500/30
+- Cards: glass effect (backdrop-blur) + hover border-primary/30
+
+================================================================================
+📁 FILE STRUCTURE YANG DIBUAT
+================================================================================
+
+src/app/
+├── components/
+│   └── user-role-table.tsx          [✅ NEW] Main component
+│       └─ Exports: UserRoleTable
+│       └─ Size: ~400 lines
+│       └─ Imports: Table, DropdownMenu, Button, motion, useState
+│
+├── pages/
+│   └── user-management.tsx           [✅ NEW] Demo page
+│       └─ Exports: UserManagementPage (default)
+│       └─ Size: ~300 lines
+│       └─ Imports: UserRoleTable, motion, lucide-react
+│
+└── routes.tsx                         [✏️ UPDATED]
+    ├─ Import: UserManagementPage
+    └─ Route: { path: "user-management", Component: UserManagementPage }
+
+dashboard-layout.tsx                   [✏️ UPDATED]
+└─ Added: Users icon import
+└─ Added: Menu item for /user-management
+
+DOCUMENTATION:
+└── ROLE_MANAGEMENT_DOCS.md            [✅ NEW] Full documentation
+
+================================================================================
+🧪 TESTING INSTRUCTIONS (UNTUK DEMONSTRASI)
+================================================================================
+
+STEP-BY-STEP DEMO:
+
+1. START DEV SERVER
+   npm run dev
+   
+2. OPEN BROWSER
+   Navigasi ke http://localhost:5173/user-management
+   
+3. LIHAT HALAMAN LOAD
+   - Hero section dengan gradient background
+   - 3 stat cards: Total Users, Roles, Active Sessions
+   - Tabel dengan 5 user
+   - Fitur showcase cards
+
+4. TEST DROPDOWN ANIMATION
+   - Klik dropdown di salah satu row
+   - Observasi smooth animation
+   - Lihat list 5 role dengan check icon di role saat ini
+   - Klik di area luar untuk tutup (atau pilih role)
+
+5. TEST ROLE CHANGE
+   - Klik dropdown
+   - Pilih role yang BERBEDA dari role saat ini
+   - Perhatikan:
+     ✓ Dropdown menutup smooth
+     ✓ Display dropdown berubah ke role baru
+     ✓ Tombol "Update" muncul dengan animasi
+     ✓ Badge role masih menunjukkan role lama (belum di-update)
+
+6. TEST CONSOLE LOGGING
+   - Buka DevTools (F12)
+   - Klik tombol "Update"
+   - Lihat console log: "🔄 Mengubah user X menjadi role Y"
+
+7. TEST TOAST NOTIFICATION
+   - Toast akan muncul di top-right
+   - Perhatikan animasi slide-in + scale
+   - Text: "Peran berhasil diubah! [nama] sekarang adalah [role]"
+   - Toast otomatis hilang setelah 4 detik (atau scroll)
+
+8. VERIFY TABLE UPDATE
+   - Badge di kolom "Role Saat Ini" berubah warna
+   - Tabel row di-re-render dengan smooth
+   - Dropdown reset ke "Pilih Role"
+   - Tombol "Update" hilang
+
+9. TEST SMART UX
+   - Pilih dropdown
+   - Pilih SAMA dengan role saat ini
+   - Tombol "Update" TIDAK muncul
+   - Text di bawah berubah: "Tidak ada perubahan"
+
+10. TEST MULTIPLE USERS
+    - Ulangi proses untuk user lain
+    - Verifikasi setiap user bisa diubah secara independen
+    - Toast menampilkan informasi user yang tepat
+
+EXPECTED CONSOLE OUTPUT SAAT DEMO:
+┌──────────────────────────────────────────────────────────────┐
+│ 🔄 Mengubah user Sarah Johnson (ID: 2) menjadi role          │
+│    strategic_manager                                          │
+│                                                              │
+│ 🔄 Mengubah user Michael Chen (ID: 3) menjadi role           │
+│    data_operator                                              │
+│                                                              │
+│ 🔄 Mengubah user Emma Wilson (ID: 4) menjadi role            │
+│    risk_analyst                                               │
+└──────────────────────────────────────────────────────────────┘
+
+================================================================================
+🔐 SUPABASE INTEGRATION READY
+================================================================================
+
+Untuk mengaktifkan database sync (PRODUCTION):
+
+1. UNCOMMENT KODE (di user-role-table.tsx)
+   Lokasi: handleRoleUpdate function
+   Uncomment blok kode dengan comment "INTEGRASI SUPABASE"
+
+2. ADD IMPORT
+   import { supabase } from "../lib/api/supabase-client";
+
+3. ENSURE DATABASE SCHEMA
+   - Table name: profiles
+   - Columns: id, name, email, role, created_at
+   - Update permission untuk authenticated users
+
+4. TEST DENGAN REAL DATABASE
+   - Buat user baru di Supabase
+   - Update role melalui UI
+   - Verifikasi perubahan di Supabase dashboard
+
+================================================================================
+✅ COMPLETION CHECKLIST
+================================================================================
+
+[✅] Table component dibuat dengan data interaktif
+[✅] Dropdown menu untuk pilih role baru
+[✅] React useState untuk state management
+[✅] handleRoleUpdate function dengan logic lengkap
+[✅] Toast notification dengan animasi
+[✅] Console logging untuk verification
+[✅] Supabase integration code (commented - siap aktivasi)
+[✅] Page demo dengan hero section
+[✅] Routes diupdate
+[✅] Navigation menu diupdate  
+[✅] Type safety (TypeScript interfaces)
+[✅] Responsive design (mobile, tablet, desktop)
+[✅] Accessibility (ARIA labels, semantic HTML)
+[✅] Error handling & edge cases
+[✅] Documentation lengkap
+
+READY FOR PRESENTATION! 🎉
+
+================================================================================
+"""

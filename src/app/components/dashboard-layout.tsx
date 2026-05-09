@@ -6,6 +6,7 @@ import {
   Stethoscope,
   TrendingUp,
   Activity,
+  Users,
   LogOut
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ export function DashboardLayout() {
     { path: "/medical-audit", icon: Stethoscope, label: "Medical Audit", role: "Medical Auditor" },
     { path: "/executive-dashboard", icon: TrendingUp, label: "Executive Command", role: "Strategic Manager" },
     { path: "/claim-growth", icon: Activity, label: "Claim Growth Analysis", role: "All Roles" },
+    { path: "/user-management", icon: Users, label: "User Management", role: "Admin" },
   ];
 
   return (

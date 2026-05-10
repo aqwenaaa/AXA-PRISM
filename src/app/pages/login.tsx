@@ -1,22 +1,39 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router";
-import { Lock, User, ArrowRight, Shield } from "lucide-react";
+import { Lock, User, ArrowRight, Shield, Loader2} from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Checkbox } from "../components/ui/checkbox";
+import { useAuth } from "../../lib/auth/auth-context";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const handleLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Navigate to data ingestion page after login
-    navigate("/data-ingestion");
-  };
+      try {
+        // Memanggil fungsi login asli yang mengecek username/password
+        const result = await login(username, password);
 
+        if (result.success) {
+          // Otomatis ke halaman sesuai role (Admin ke User Management, dll)
+          navigate(result.redirectTo || "/profile");
+        } else {
+          alert(result.error || "Username atau Password salah!");
+        }
+      } catch (err) {
+        alert("Terjadi kesalahan sistem.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
   return (
     <div className="h-screen flex">
       {/* Left Side - 3D Illustration */}

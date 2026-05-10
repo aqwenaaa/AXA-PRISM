@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate} from "react-router";
 import LandingPage from "./pages/landing";
 import LoginPage from "./pages/login";
 import LogoutPage from "./pages/logout";
@@ -16,7 +16,10 @@ import ExecutiveDashboardPage from "./pages/executive-dashboard";
 import ClaimGrowthPage from "./pages/claim-growth";
 import { DashboardLayout } from "./components/dashboard-layout";
 import ChangePassword from './pages/changepassword';
-
+import UserManagementPage from "./pages/user-management";
+import { ProtectedRoute } from "./components/protected-route";
+import SystemOverviewPage from "./pages/system-overview";
+import ModelDebuggingPage from "./pages/model-debug";
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -55,8 +58,30 @@ export const router = createBrowserRouter([
     Component: FAQPage,
   },
   {
-    Component: DashboardLayout,
+    // [BARU] Bungkus Dashboard dengan ProtectedRoute
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     children: [
+      {
+    path: "system-overview", // Tambahan baru
+    Component: SystemOverviewPage,
+  },
+  {
+    path: "model-debug", // Tambahan baru
+    Component: ModelDebuggingPage,
+  },
+      {
+        // [BARU] Route User Management yang tadi ketinggalan
+        path: "user-management", 
+        element: (
+          <ProtectedRoute roles={["admin"]}>
+            <UserManagementPage />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "data-ingestion",
         Component: DataIngestionPage,
@@ -85,6 +110,7 @@ export const router = createBrowserRouter([
         path: "change-password", // Tambahkan path ini
         Component: ChangePassword,
       },
+      
     ],
   },
 ]);

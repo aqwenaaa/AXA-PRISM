@@ -29,7 +29,7 @@ export function DashboardLayout() {
       label: "System Overview", 
       role: "System Admin",
       section: "System Administration", // [TAMBAHKAN INI]
-      adminOnly: true 
+      allowedRoles: ["admin"]
     },
     { 
       path: "/user-management", 
@@ -37,7 +37,7 @@ export function DashboardLayout() {
       label: "User Management", 
       role: "System Admin",
       section: "System Administration", // [TAMBAHKAN INI]
-      adminOnly: true 
+      allowedRoles: ["admin"]
     },
     { 
       path: "/model-debug", 
@@ -45,7 +45,7 @@ export function DashboardLayout() {
       label: "Model Debug Lab", 
       role: "ML Engineer",
       section: "System Administration", // [TAMBAHKAN INI]
-      adminOnly: true 
+      allowedRoles: ["admin"]
     },
 
     // --- Section: Operation ---
@@ -54,28 +54,32 @@ export function DashboardLayout() {
       icon: Upload, 
       label: "Data Ingestion", 
       role: "Data Operator",
-      section: "Operations" // [TAMBAHKAN INI]
+      section: "Operations" ,// [TAMBAHKAN INI]
+      allowedRoles: ["admin", "data_operator"]
     },
     { 
       path: "/intelligence-lab", 
       icon: Brain, 
       label: "Intelligence Lab", 
       role: "Risk Analyst",
-      section: "Operations" // [TAMBAHKAN INI]
+      section: "Operations", // [TAMBAHKAN INI]
+      allowedRoles: ["admin","risk_analyst"]
     },
     { 
       path: "/medical-audit", 
       icon: Stethoscope, 
       label: "Medical Audit", 
       role: "Medical Auditor",
-      section: "Operations" // [TAMBAHKAN INI]
+      section: "Operations", // [TAMBAHKAN INI]
+      allowedRoles: ["admin", "medical_auditor"]
     },
     { 
       path: "/executive-dashboard", 
       icon: TrendingUp, 
       label: "Executive Command", 
       role: "Strategic Manager",
-      section: "Operations" // [TAMBAHKAN INI]
+      section: "Operations", // [TAMBAHKAN INI]
+      allowedRoles: ["admin", "strategic_manager"]
     },
 
     // --- Section: Shared ---
@@ -84,18 +88,14 @@ export function DashboardLayout() {
       icon: Activity, 
       label: "Claim Growth Analysis", 
       role: "All Roles",
-      section: "Shared" // [TAMBAHKAN INI]
+      section: "Shared", // [TAMBAHKAN INI]
+      allowedRoles: "all"
     },
   ];
 
   // [TAMBAHKAN INI] List kategori untuk di-loop
   const sections = ["System Administration", "Operations", "Shared"];
   
-  // Filter menu: Kalau bukan admin, jangan tunjukin menu User Management
-  const visibleMenu = menuItems.filter(item => 
-    !item.adminOnly || (item.adminOnly && user?.role === 'admin')
-  );
-
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -115,17 +115,17 @@ export function DashboardLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-8 overflow-y-auto">
-          {/* [UBAH BAGIAN LOOP INI] */}
           {sections.map((sectionName) => {
-            // Filter menu yang masuk ke section ini dan sesuai role
-            const filteredMenus = menuItems.filter(item => 
-              item.section === sectionName && 
-              (!item.adminOnly || (item.adminOnly && user?.role === 'admin'))
-            );
+            const filteredMenus = menuItems.filter(item => {
+            if (item.section !== sectionName) return false;
+              
+              // 2. Cek izin akses (RBAC)
+              if (item.allowedRoles === "all") return true;
+              return item.allowedRoles.includes(user?.role || "");
+            });
 
-            // Kalau nggak ada menu yang boleh dilihat di section ini, sembunyikan section-nya
             if (filteredMenus.length === 0) return null;
-
+            
             return (
               <div key={sectionName} className="space-y-3">
                 {/* Teks Judul Kategori (Gaya kayak lingkaran merahmu) */}

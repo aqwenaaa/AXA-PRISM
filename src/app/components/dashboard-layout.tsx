@@ -1,7 +1,6 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Outlet, useNavigate, useLocation } from "react-router";
+import { useState } from "react";
+import LogoutModal from "../components/logoutmodal"; 
 import {
   LayoutDashboard,
   Upload,
@@ -9,20 +8,94 @@ import {
   Stethoscope,
   TrendingUp,
   Activity,
-  LogOut
+  LogOut,
+  Users, // [BARU] Icon untuk User Management
+  Shield, // [BARU] Icon untuk role Admin
+  FlaskConical, 
 } from "lucide-react";
+import { useAuth } from "../../lib/auth/auth-context"; // [BARU] Agar Sidebar tahu siapa yang login
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+export function DashboardLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuth(); // [BARU] Ambil data user asli
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const menuItems = [
-    { path: "/operator/data-ingestion", icon: Upload, label: "Data Ingestion", role: "Data Operator" },
-    { path: "/analyst/intelligence-lab", icon: Brain, label: "Intelligence Lab", role: "Risk Analyst" },
-    { path: "/auditor/medical-audit", icon: Stethoscope, label: "Medical Audit", role: "Medical Auditor" },
-    { path: "/manager/executive-dashboard", icon: TrendingUp, label: "Executive Command", role: "Strategic Manager" },
-    { path: "/manager/claim-growth", icon: Activity, label: "Claim Growth Analysis", role: "All Roles" },
+ const menuItems = [
+    // --- Section: System Administration ---
+    { 
+      path: "/system-overview", 
+      icon: LayoutDashboard, 
+      label: "System Overview", 
+      role: "System Admin",
+      section: "System Administration", // [TAMBAHKAN INI]
+      allowedRoles: ["admin"]
+    },
+    { 
+      path: "/user-management", 
+      icon: Users, 
+      label: "User Management", 
+      role: "System Admin",
+      section: "System Administration", // [TAMBAHKAN INI]
+      allowedRoles: ["admin"]
+    },
+    { 
+      path: "/model-debug", 
+      icon: FlaskConical, 
+      label: "Model Debug Lab", 
+      role: "ML Engineer",
+      section: "System Administration", // [TAMBAHKAN INI]
+      allowedRoles: ["admin"]
+    },
+
+    // --- Section: Operation ---
+    { 
+      path: "/data-ingestion", 
+      icon: Upload, 
+      label: "Data Ingestion", 
+      role: "Data Operator",
+      section: "Operations" ,// [TAMBAHKAN INI]
+      allowedRoles: ["admin", "data_operator"]
+    },
+    { 
+      path: "/intelligence-lab", 
+      icon: Brain, 
+      label: "Intelligence Lab", 
+      role: "Risk Analyst",
+      section: "Operations", // [TAMBAHKAN INI]
+      allowedRoles: ["admin","risk_analyst"]
+    },
+    { 
+      path: "/medical-audit", 
+      icon: Stethoscope, 
+      label: "Medical Audit", 
+      role: "Medical Auditor",
+      section: "Operations", // [TAMBAHKAN INI]
+      allowedRoles: ["admin", "medical_auditor"]
+    },
+    { 
+      path: "/executive-dashboard", 
+      icon: TrendingUp, 
+      label: "Executive Command", 
+      role: "Strategic Manager",
+      section: "Operations", // [TAMBAHKAN INI]
+      allowedRoles: ["admin", "strategic_manager"]
+    },
+
+    // --- Section: Shared ---
+    { 
+      path: "/claim-growth", 
+      icon: Activity, 
+      label: "Claim Growth Analysis", 
+      role: "All Roles",
+      section: "Shared", // [TAMBAHKAN INI]
+      allowedRoles: "all"
+    },
   ];
 
+  // [TAMBAHKAN INI] List kategori untuk di-loop
+  const sections = ["System Administration", "Operations", "Shared"];
+  
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -31,7 +104,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <LayoutDashboard className="w-6 h-6 text-white" />
+              <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground">AXA-PRISM</h2>
@@ -41,58 +114,102 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.path;
+        <nav className="flex-1 p-4 space-y-8 overflow-y-auto">
+          {sections.map((sectionName) => {
+            const filteredMenus = menuItems.filter(item => {
+            if (item.section !== sectionName) return false;
+              
+              // 2. Cek izin akses (RBAC)
+              if (item.allowedRoles === "all") return true;
+              return item.allowedRoles.includes(user?.role || "");
+            });
+
+            if (filteredMenus.length === 0) return null;
             
             return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`
-                  w-full flex items-start gap-3 px-4 py-3 rounded-xl transition-all
-                  ${isActive 
-                    ? 'bg-primary text-white shadow-lg shadow-primary/30' 
-                    : 'text-foreground hover:bg-sidebar-accent'
-                  }
-                `}
-              >
-                <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-primary'}`} />
-                <div className="text-left flex-1">
-                  <div className="text-sm font-medium">{item.label}</div>
-                  <div className={`text-xs ${isActive ? 'text-white/80' : 'text-muted-foreground'}`}>
-                    {item.role}
-                  </div>
+              <div key={sectionName} className="space-y-3">
+                {/* Teks Judul Kategori (Gaya kayak lingkaran merahmu) */}
+                <h3 className="px-4 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.15em]">
+                  {sectionName}
+                </h3>
+                
+                <div className="space-y-1">
+                  {filteredMenus.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+                    
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => navigate(item.path)}
+                        className={`
+                          w-full flex items-start gap-3 px-4 py-3 rounded-xl transition-all
+                          ${isActive 
+                            ? 'bg-primary text-white shadow-lg shadow-primary/30' 
+                            : 'text-foreground hover:bg-sidebar-accent'
+                          }
+                        `}
+                      >
+                        <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-primary'}`} />
+                        <div className="text-left flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{item.label}</div>
+                          <div className={`text-[10px] ${isActive ? 'text-white/80' : 'text-muted-foreground'}`}>
+                            {item.role}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              </Link>
+              </div>
             );
           })}
         </nav>
-
-        {/* User Section */}
+        
+        {/* User Section - [SUDAH OTOMATIS] */}
         <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-sidebar-accent">
-            <Link href="/profile" className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                JD
+          <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-sidebar-accent">
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity min-w-0"
+            >
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                {user?.initials || "JD"}
               </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-foreground">John Doe</div>
-                <div className="text-xs text-muted-foreground">Admin User</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-foreground truncate">
+                  {user?.name || "John Doe"}
+                </div>
+                <div className="text-[10px] text-muted-foreground truncate uppercase">
+                  {user?.role?.replace('_', ' ') || "Admin User"}
+                </div>
               </div>
-            </Link>
-            <Link href="/logout" className="p-2 hover:bg-white rounded-lg transition-colors" title="Logout">
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="p-2 hover:bg-white rounded-lg transition-colors shrink-0"
+              title="Logout"
+            >
               <LogOut className="w-4 h-4 text-muted-foreground" />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        {children}
+        <Outlet />
       </main>
+
+      <LogoutModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onConfirm={() => {
+          setIsModalOpen(false);
+          logout(); // Bersihkan session
+          navigate("/login");
+        }}
+      />
     </div>
   );
 }

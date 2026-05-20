@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
+import Navbar from "@/app/components/ui/navbar";
 import { ArrowLeft, Heart, Shield, TrendingUp, Users, Building2, Globe2, Award, CheckCircle2 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -36,23 +37,7 @@ export default function AboutAXAPage() {
       />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 glass backdrop-blur-xl border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-success/50 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Heart className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-semibold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">AXA-PRISM</span>
-          </Link>
-
-          <Link href="/">
-            <Button variant="ghost" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 pt-20 pb-16 relative">

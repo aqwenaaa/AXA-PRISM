@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/app/components/ui/button";
-import { ArrowLeft, Heart, Shield, Lock, Eye, FileCheck, Database, Award, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Button } from "../components/ui/button";
+import Navbar from "@/app/components/ui/navbar";
+import {
+  ArrowLeft, Heart, Shield, Lock, Eye, FileCheck,
+  Database, Award, CheckCircle2, AlertTriangle
+} from "lucide-react";
 import { motion } from "motion/react";
-
 
 export default function SecurityPage() {
   return (
@@ -37,23 +40,7 @@ export default function SecurityPage() {
       />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 glass backdrop-blur-xl border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-success/50 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Heart className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-semibold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">AXA-PRISM</span>
-          </Link>
-
-          <Link href="/">
-            <Button variant="ghost" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 pt-20 pb-16 relative">
@@ -95,12 +82,12 @@ export default function SecurityPage() {
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid md:grid-cols-5 gap-6">
           {[
-           { name: 'HIPAA', subtitle: 'Compliant', image: "/assets/hipaa.png" },
-          { name: 'SOC 2', subtitle: 'Type II', image: "/assets/soc.png" },
-          { name: 'ISO 27001', subtitle: 'Certified', image: "/assets/iso.png" },
-          { name: 'GDPR', subtitle: 'Ready', image: "/assets/gdpr.png" },
-          { name: 'PCI DSS', subtitle: 'Level 1', image: "/assets/pci.png" },
-            ].map((cert, i) => (
+            { name: 'HIPAA', subtitle: 'Compliant' },
+            { name: 'SOC 2', subtitle: 'Type II' },
+            { name: 'ISO 27001', subtitle: 'Certified' },
+            { name: 'GDPR', subtitle: 'Ready' },
+            { name: 'PCI DSS', subtitle: 'Level 1' },
+          ].map((cert, i) => (
             <motion.div
               key={cert.name}
               className="glass rounded-xl p-6 text-center"
@@ -110,15 +97,7 @@ export default function SecurityPage() {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               whileHover={{ scale: 1.05 }}
             >
-              {cert.image ? (
-                  <img
-                    src={cert.image}
-                    alt={cert.name}
-                    className="w-24 h-24 mx-auto mb-3 object-contain"
-                  />
-                ) : (
-                  <Award className="w-12 h-12 mx-auto mb-3 text-primary" />
-                )}
+              <Award className="w-12 h-12 mx-auto mb-3 text-primary" />
               <div className="font-semibold text-foreground">{cert.name}</div>
               <div className="text-sm text-foreground/60">{cert.subtitle}</div>
             </motion.div>

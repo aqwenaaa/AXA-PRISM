@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/app/components/ui/button";
+import Navbar from "@/app/components/ui/navbar";
 import { ArrowLeft, Heart, Shield, FileText, UserCheck, Stethoscope, Activity, Hospital, Ambulance, Pill, HeartPulse, Clipboard, CheckCircle2 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -36,26 +38,10 @@ export default function HealthcarePage() {
       />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 glass backdrop-blur-xl border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-success flex items-center justify-center shadow-lg shadow-primary/20">
-              <Heart className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-semibold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">AXA-PRISM</span>
-          </Link>
-
-          <Link href="/">
-            <Button variant="ghost" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-20 pb-16 relative">
+      <section className="max-w-7xl mx-auto px-6 pt-32 pb-16 relative">
         <motion.div
           className="text-center max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 30 }}

@@ -15,6 +15,13 @@ export type UserRole =
   | "medical_auditor"
   | "strategic_manager";
 
+export type ProfileRole =
+  | "admin"
+  | "data_operator"
+  | "risk_analyst"
+  | "medical_auditor"
+  | "strategic_manager";
+
 export type Permission =
   | "view:data-ingestion"
   | "edit:data-ingestion"
@@ -46,7 +53,7 @@ export interface RoleConfig {
 export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
   admin: {
     label: "System Admin",
-    defaultRoute: "/user-management",
+    defaultRoute: "/admin-system-overview",
     color: "#1a1a2e",
     gradientClass: "from-gray-900 to-gray-700",
     description: "Full system control & user management",
@@ -135,67 +142,140 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  profileRole: ProfileRole;
   initials: string;
   department: string;
 }
 
 /** Demo credentials — replace with Supabase auth in production */
-export const DEMO_USERS: Record<string, { user: User; password: string }> = {
-  admin: {
-    user: {
-      id: "usr-000",
-      name: "Aqueena Administrator",
-      email: "admin@axa.co.id",
-      role: "admin",
-      initials: "AA",
-      department: "System Administration",
-    },
-    password: "admin123",
-  },
-  operator: {
-    user: {
-      id: "usr-001",
-      name: "Ahmad Fauzi",
-      email: "ahmad.fauzi@axa.co.id",
-      role: "data_operator",
-      initials: "AF",
-      department: "Data Management Unit",
-    },
-    password: "operator123",
-  },
-  analyst: {
-    user: {
-      id: "usr-002",
-      name: "Dr. Sari Dewi",
-      email: "sari.dewi@axa.co.id",
-      role: "risk_analyst",
-      initials: "SD",
-      department: "Risk Intelligence Division",
-    },
-    password: "analyst123",
-  },
-  auditor: {
-    user: {
-      id: "usr-003",
-      name: "Dr. Budi Santoso",
-      email: "budi.santoso@axa.co.id",
-      role: "medical_auditor",
-      initials: "BS",
-      department: "Medical Audit Department",
-    },
-    password: "auditor123",
-  },
-  manager: {
-    user: {
-      id: "usr-004",
-      name: "Ir. Dian Pratiwi",
-      email: "dian.pratiwi@axa.co.id",
-      role: "strategic_manager",
-      initials: "DP",
-      department: "Executive Management",
-    },
-    password: "manager123",
-  },
+export interface ProfileRecord {
+  id: string;
+  full_name: string | null;
+  role: ProfileRole;
+  created_at: string | null;
+}
+
+export function mapProfileRoleToUserRole(role: ProfileRole): UserRole {
+  return role;
+}
+
+export function getProfileRoleRedirect(role: ProfileRole): string {
+  switch (role) {
+    case "admin":
+      return "/admin/system-overview";
+    case "data_operator":
+      return "/operator/data-ingestion";
+    case "risk_analyst":
+      return "/analyst/intelligence-lab";
+    case "medical_auditor":
+      return "/auditor/medical-audit";
+    case "strategic_manager":
+      return "/manager/executive-dashboard";
+    default:
+      return "/operator/data-ingestion";
+  }
+}
+
+export const ROLE_ROUTE_ACCESS: Record<UserRole, string[]> = {
+  admin: [
+    "/",
+    "/login",
+    "/logout",
+    "/register",
+    "/about-axa",
+    "/security",
+    "/reset-password",
+    "/change-password",
+    "/changepassword",
+    "/profile",
+    "/healthcare",
+    "/faq",
+    "/claim-growth",
+    "/manager/claim-growth",
+    "/data-ingestion",
+    "/operator/data-ingestion",
+    "/intelligence-lab",
+    "/analyst/intelligence-lab",
+    "/medical-audit",
+    "/auditor/medical-audit",
+    "/executive-dashboard",
+    "/manager/executive-dashboard",
+    "/system-overview",
+    "/user-management",
+    "/model-debug",
+    "/admin",
+    "/admin/system-overview",
+    "/admin/user-management",
+    "/admin/model-debug",
+  ],
+  data_operator: [
+    "/",
+    "/login",
+    "/logout",
+    "/about-axa",
+    "/register",
+    "/security",
+    "/reset-password",
+    "/change-password",
+    "/changepassword",
+    "/profile",
+    "/healthcare",
+    "/faq",
+    "/claim-growth",
+    "/manager/claim-growth",
+    "/operator/data-ingestion",
+  ],
+  risk_analyst: [
+    "/",
+    "/login",
+    "/logout",
+    "/about-axa",
+    "/register",
+    "/security",
+    "/reset-password",
+    "/change-password",
+    "/changepassword",
+    "/profile",
+    "/healthcare",
+    "/faq",
+    "/claim-growth",
+    "/manager/claim-growth",
+    "/analyst/intelligence-lab",
+  ],
+  medical_auditor: [
+    "/",
+    "/login",
+    "/logout",
+    "/about-axa",
+    "/register",
+    "/security",
+    "/reset-password",
+    "/change-password",
+    "/changepassword",
+    "/profile",
+    "/healthcare",
+    "/faq",
+    "/claim-growth",
+    "/manager/claim-growth",
+    "/auditor/medical-audit",
+  ],
+  strategic_manager: [
+    "/",
+    "/login",
+    "/logout",
+    "/about-axa",
+    "/register",
+    "/security",
+    "/reset-password",
+    "/change-password",
+    "/changepassword",
+    "/profile",
+    "/healthcare",
+    "/faq",
+    "/claim-growth",
+    "/manager/claim-growth",
+    "/manager/executive-dashboard",
+  ],
 };
 
 // ─── Claims Domain ──────────────────────────────────────────────────────────

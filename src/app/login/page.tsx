@@ -7,21 +7,23 @@ import { Lock, User, ArrowRight, Shield } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { supabase } from "@/lib/api/supabase-client";
+import { useAuth } from "@/lib/auth/auth-context";
+import { ROLE_ROUTE_ACCESS } from "@/lib/types";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedUsername = localStorage.getItem("axa_prism_username");
+    const savedEmail = localStorage.getItem("axa_prism_email");
     const savedRememberMe = localStorage.getItem("axa_prism_remember_me");
 
-    if (savedUsername && savedRememberMe === "true") {
-      setUsername(savedUsername);
+    if (savedEmail && savedRememberMe === "true") {
+      setEmail(savedEmail);
       setRememberMe(true);
     }
   }, []);
@@ -30,25 +32,43 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: username,
-      password,
-    });
+    try {
+      const result = await login(email, password);
 
-    if (error) {
-      setErrorMessage(error.message);
-      return;
+      if (result.success) {
+        if (rememberMe) {
+          localStorage.setItem("axa_prism_email", email);
+          localStorage.setItem("axa_prism_remember_me", "true");
+        } else {
+          localStorage.removeItem("axa_prism_email");
+          localStorage.setItem("axa_prism_remember_me", "false");
+        }
+
+        // Get redirect parameter from URL search params (Middleware-driven or SSO redirect)
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectParam = searchParams.get("redirect");
+
+        // Validate redirect parameter against the logged-in user's role permissions
+        const userRole = result.role || "data_operator";
+        const allowedRoutes = ROLE_ROUTE_ACCESS[userRole] || [];
+
+        const isRedirectAllowed = redirectParam && allowedRoutes.some((route) => {
+          if (route === "/") return redirectParam === "/";
+          return redirectParam === route || redirectParam.startsWith(route + "/");
+        });
+
+        if (redirectParam && isRedirectAllowed) {
+          router.push(redirectParam);
+        } else {
+          router.push(result.redirectTo || "/operator/data-ingestion");
+        }
+      } else {
+        setErrorMessage(result.error || "Invalid email or password.");
+      }
+    } catch (error) {
+      setErrorMessage("An unexpected error occurred. Please try again.");
+      console.error(error);
     }
-
-    if (rememberMe) {
-      localStorage.setItem("axa_prism_username", username);
-      localStorage.setItem("axa_prism_remember_me", "true");
-    } else {
-      localStorage.removeItem("axa_prism_username");
-      localStorage.setItem("axa_prism_remember_me", "false");
-    }
-
-    router.push("/operator/data-ingestion");
   };
 
   return (
@@ -118,15 +138,15 @@ export default function LoginPage() {
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label className="block text-sm mb-2 text-foreground">Username</label>
+                <label className="block text-sm mb-2 text-foreground">Email</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 h-12 bg-input-background border-border rounded-xl"
-                    placeholder="Enter your username"
+                    placeholder="Enter your email"
                     required
                   />
                 </div>

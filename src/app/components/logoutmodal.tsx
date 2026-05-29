@@ -1,3 +1,5 @@
+"use client";
+
 import { motion, AnimatePresence } from "motion/react";
 import { LogOut, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";

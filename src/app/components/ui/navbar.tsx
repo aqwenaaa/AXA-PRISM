@@ -47,7 +47,7 @@ export default function Navbar() {
             About AXA
           </Link>
 
-          <Link href="/safety" className="text-sm text-foreground/70 hover:text-foreground">
+          <Link href="/security" className="text-sm text-foreground/70 hover:text-foreground">
             Security
           </Link>
 

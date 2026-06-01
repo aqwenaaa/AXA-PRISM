@@ -43,11 +43,19 @@ export default function LoginPage() {
           localStorage.removeItem("axa_prism_email");
           localStorage.setItem("axa_prism_remember_me", "false");
         }
-
         // Get redirect parameter from URL search params (Middleware-driven or SSO redirect)
         const searchParams = new URLSearchParams(window.location.search);
         const redirectParam = searchParams.get("redirect");
 
+        // Force a router refresh to flush the updated cookies to Server Components and Middleware
+        router.refresh();
+
+        if (redirectParam) {
+          router.push(redirectParam);
+        } else {
+          router.push(result.redirectTo || "/operator/data-ingestion");
+        }
+      
         // Validate redirect parameter against the logged-in user's role permissions
         const userRole = result.role || "data_operator";
         const allowedRoutes = ROLE_ROUTE_ACCESS[userRole] || [];

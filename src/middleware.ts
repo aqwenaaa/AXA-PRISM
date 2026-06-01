@@ -41,7 +41,7 @@ const GLOBAL_PROTECTED_ROUTES = [
   "/profile",
   "/changepassword",
   "/change-password",
-  "/security",
+  "/safety",
   "/logout",
   "/claim-growth",
 ];

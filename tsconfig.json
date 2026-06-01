@@ -41,5 +41,9 @@
     "src/app/pages_legacy",
     "src/main.tsx",
     "src/proxy.ts"
-  ]
+  ],
+  "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
 }

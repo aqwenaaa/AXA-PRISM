@@ -30,17 +30,17 @@ import {
   CheckCircle2,
   Save,
 } from "lucide-react";
-import { Button } from "../../../../src/app/components/ui/button";
-import { Badge } from "../../../../src/app/components/ui/badge";
+import { Button } from "../../../../../src/app/components/ui/button";
+import { Badge } from "../../../../../src/app/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../../src/app/components/ui/select";
-import { UserRole, ROLE_CONFIG } from "../../../../src/lib/types";
-import { useNotifications } from "../../lib/notifications/notification-context";
+} from "../../../../../src/app/components/ui/select";
+import { UserRole, ROLE_CONFIG } from "../../../../../src/lib/types";
+import { useNotifications } from "../../../lib/notifications/notification-context";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

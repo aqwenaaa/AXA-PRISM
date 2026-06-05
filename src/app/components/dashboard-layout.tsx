@@ -1,110 +1,121 @@
-import { Outlet, useNavigate, useLocation } from "react-router";
-import { useState } from "react";
-import LogoutModal from "../components/logoutmodal"; 
+"use client";
+
+import { useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import LogoutModal from "../components/logoutmodal";
 import {
-  LayoutDashboard,
-  Upload,
+  Activity,
   Brain,
+  FlaskConical,
+  LayoutDashboard,
+  LogOut,
+  Shield,
   Stethoscope,
   TrendingUp,
-  Activity,
-  LogOut,
-  Users, // [BARU] Icon untuk User Management
-  Shield, // [BARU] Icon untuk role Admin
-  FlaskConical, 
+  Upload,
+  Users,
 } from "lucide-react";
-import { useAuth } from "../../lib/auth/auth-context"; // [BARU] Agar Sidebar tahu siapa yang login
+import { useAuth } from "../../lib/auth/auth-context";
 
-export function DashboardLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout } = useAuth(); // [BARU] Ambil data user asli
+type AllowedRoles = "all" | Array<"admin" | "data_operator" | "risk_analyst" | "medical_auditor" | "strategic_manager">;
+
+type MenuItem = {
+  path: string;
+  icon: typeof Shield;
+  label: string;
+  role: string;
+  section: string;
+  allowedRoles: AllowedRoles;
+};
+
+const menuItems: MenuItem[] = [
+  {
+    path: "/admin/system-overview",
+    icon: LayoutDashboard,
+    label: "System Overview",
+    role: "System Admin",
+    section: "System Administration",
+    allowedRoles: ["admin"],
+  },
+  {
+    path: "/admin/user-management",
+    icon: Users,
+    label: "User Management",
+    role: "System Admin",
+    section: "System Administration",
+    allowedRoles: ["admin"],
+  },
+  {
+    path: "/admin/model-debug",
+    icon: FlaskConical,
+    label: "Model Debug Lab",
+    role: "ML Engineer",
+    section: "System Administration",
+    allowedRoles: ["admin"],
+  },
+  {
+    path: "/operator/data-ingestion",
+    icon: Upload,
+    label: "Data Ingestion",
+    role: "Data Operator",
+    section: "Operations",
+    allowedRoles: ["admin", "data_operator"],
+  },
+  {
+    path: "/analyst/intelligence-lab",
+    icon: Brain,
+    label: "Intelligence Lab",
+    role: "Risk Analyst",
+    section: "Operations",
+    allowedRoles: ["admin", "risk_analyst"],
+  },
+  {
+    path: "/auditor/medical-audit",
+    icon: Stethoscope,
+    label: "Medical Audit",
+    role: "Medical Auditor",
+    section: "Operations",
+    allowedRoles: ["admin", "medical_auditor"],
+  },
+  {
+    path: "/manager/executive-dashboard",
+    icon: TrendingUp,
+    label: "Executive Command",
+    role: "Strategic Manager",
+    section: "Operations",
+    allowedRoles: ["admin", "strategic_manager"],
+  },
+  {
+    path: "/manager/claim-growth",
+    icon: Activity,
+    label: "Claim Growth Analysis",
+    role: "All Roles",
+    section: "Shared",
+    allowedRoles: "all",
+  },
+];
+
+const sections = ["System Administration", "Operations", "Shared"];
+
+function DashboardShell({
+  children,
+  pathname,
+  onNavigate,
+}: {
+  children: ReactNode;
+  pathname: string;
+  onNavigate: (path: string) => void;
+}) {
+  const { user, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
- const menuItems = [
-    // --- Section: System Administration ---
-    { 
-      path: "/system-overview", 
-      icon: LayoutDashboard, 
-      label: "System Overview", 
-      role: "System Admin",
-      section: "System Administration", // [TAMBAHKAN INI]
-      allowedRoles: ["admin"]
-    },
-    { 
-      path: "/user-management", 
-      icon: Users, 
-      label: "User Management", 
-      role: "System Admin",
-      section: "System Administration", // [TAMBAHKAN INI]
-      allowedRoles: ["admin"]
-    },
-    { 
-      path: "/model-debug", 
-      icon: FlaskConical, 
-      label: "Model Debug Lab", 
-      role: "ML Engineer",
-      section: "System Administration", // [TAMBAHKAN INI]
-      allowedRoles: ["admin"]
-    },
-
-    // --- Section: Operation ---
-    { 
-      path: "/data-ingestion", 
-      icon: Upload, 
-      label: "Data Ingestion", 
-      role: "Data Operator",
-      section: "Operations" ,// [TAMBAHKAN INI]
-      allowedRoles: ["admin", "data_operator"]
-    },
-    { 
-      path: "/intelligence-lab", 
-      icon: Brain, 
-      label: "Intelligence Lab", 
-      role: "Risk Analyst",
-      section: "Operations", // [TAMBAHKAN INI]
-      allowedRoles: ["admin","risk_analyst"]
-    },
-    { 
-      path: "/medical-audit", 
-      icon: Stethoscope, 
-      label: "Medical Audit", 
-      role: "Medical Auditor",
-      section: "Operations", // [TAMBAHKAN INI]
-      allowedRoles: ["admin", "medical_auditor"]
-    },
-    { 
-      path: "/executive-dashboard", 
-      icon: TrendingUp, 
-      label: "Executive Command", 
-      role: "Strategic Manager",
-      section: "Operations", // [TAMBAHKAN INI]
-      allowedRoles: ["admin", "strategic_manager"]
-    },
-
-    // --- Section: Shared ---
-    { 
-      path: "/claim-growth", 
-      icon: Activity, 
-      label: "Claim Growth Analysis", 
-      role: "All Roles",
-      section: "Shared", // [TAMBAHKAN INI]
-      allowedRoles: "all"
-    },
-  ];
-
-  // [TAMBAHKAN INI] List kategori untuk di-loop
-  const sections = ["System Administration", "Operations", "Shared"];
-  
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-sidebar-border flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border">
+      <aside className="flex w-64 flex-col border-r border-sidebar-border bg-white">
+        <div className="border-b border-sidebar-border p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-purple-600">
+              <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground">AXA-PRISM</h2>
@@ -113,48 +124,52 @@ export function DashboardLayout() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-8 overflow-y-auto">
+        <nav className="flex-1 space-y-8 overflow-y-auto p-4">
           {sections.map((sectionName) => {
-            const filteredMenus = menuItems.filter(item => {
-            if (item.section !== sectionName) return false;
-              
-              // 2. Cek izin akses (RBAC)
+            const filteredMenus = menuItems.filter((item) => {
+              if (item.section !== sectionName) return false;
               if (item.allowedRoles === "all") return true;
-              return item.allowedRoles.includes(user?.role || "");
+              return user ? item.allowedRoles.includes(user.role) : false;
             });
 
             if (filteredMenus.length === 0) return null;
-            
+
             return (
               <div key={sectionName} className="space-y-3">
-                {/* Teks Judul Kategori (Gaya kayak lingkaran merahmu) */}
-                <h3 className="px-4 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.15em]">
+                <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/60">
                   {sectionName}
                 </h3>
-                
+
                 <div className="space-y-1">
                   {filteredMenus.map((item) => {
                     const Icon = item.icon;
-                    const isActive = location.pathname === item.path;
-                    
+                    const isActive = pathname === item.path;
+
                     return (
                       <button
                         key={item.path}
-                        onClick={() => navigate(item.path)}
-                        className={`
-                          w-full flex items-start gap-3 px-4 py-3 rounded-xl transition-all
-                          ${isActive 
-                            ? 'bg-primary text-white shadow-lg shadow-primary/30' 
-                            : 'text-foreground hover:bg-sidebar-accent'
-                          }
-                        `}
+                        onClick={() => onNavigate(item.path)}
+                        className={`w-full rounded-xl px-4 py-3 text-left transition-all ${
+                          isActive
+                            ? "bg-primary text-white shadow-lg shadow-primary/30"
+                            : "text-foreground hover:bg-sidebar-accent"
+                        }`}
                       >
-                        <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-primary'}`} />
-                        <div className="text-left flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">{item.label}</div>
-                          <div className={`text-[10px] ${isActive ? 'text-white/80' : 'text-muted-foreground'}`}>
-                            {item.role}
+                        <div className="flex items-start gap-3">
+                          <Icon
+                            className={`mt-0.5 h-5 w-5 shrink-0 ${
+                              isActive ? "text-white" : "text-primary"
+                            }`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">{item.label}</div>
+                            <div
+                              className={`text-[10px] ${
+                                isActive ? "text-white/80" : "text-muted-foreground"
+                              }`}
+                            >
+                              {item.role}
+                            </div>
                           </div>
                         </div>
                       </button>
@@ -165,51 +180,61 @@ export function DashboardLayout() {
             );
           })}
         </nav>
-        
-        {/* User Section - [SUDAH OTOMATIS] */}
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-sidebar-accent">
+
+        <div className="border-t border-sidebar-border p-4">
+          <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-3">
             <button
-              onClick={() => navigate("/profile")}
-              className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity min-w-0"
+              onClick={() => onNavigate("/profile")}
+              className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity hover:opacity-80"
             >
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600 text-xs font-semibold text-white">
                 {user?.initials || "JD"}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground truncate">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-foreground">
                   {user?.name || "John Doe"}
                 </div>
-                <div className="text-[10px] text-muted-foreground truncate uppercase">
-                  {user?.role?.replace('_', ' ') || "Admin User"}
+                <div className="truncate text-[10px] uppercase text-muted-foreground">
+                  {user?.role?.replace("_", " ") || "Admin User"}
                 </div>
               </div>
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="p-2 hover:bg-white rounded-lg transition-colors shrink-0"
+              className="shrink-0 rounded-lg p-2 transition-colors hover:bg-white"
               title="Logout"
             >
-              <LogOut className="w-4 h-4 text-muted-foreground" />
+              <LogOut className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
+      <main className="flex-1 overflow-auto">{children}</main>
 
-      <LogoutModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onConfirm={() => {
+      <LogoutModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={async () => {
           setIsModalOpen(false);
-          logout(); // Bersihkan session
-          navigate("/login");
+          try {
+            await logout();
+          } finally {
+            onNavigate("/login");
+          }
         }}
       />
     </div>
+  );
+}
+
+export function NextDashboardLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname() || "";
+
+  return (
+    <DashboardShell pathname={pathname} onNavigate={(path) => router.push(path)}>
+      {children}
+    </DashboardShell>
   );
 }

@@ -1,167 +1,378 @@
-/**
- * AXA-PRISM Authentication Context — RBAC Provider
- *
- * Next.js migration note:
- * ──────────────────────
- * In Next.js App Router:
- * - This file gets "use client" directive (already implied here as React context)
- * - Auth state would be backed by Supabase via @supabase/ssr
- * - Session validation happens in middleware.ts (server-side)
- * - This client context would hydrate from server-fetched session
- *
- * Current: in-memory auth with demo credentials.
- * Production: swap login() to call Supabase signInWithPassword()
- */
+"use client";
 
-import React, {
+import {
   createContext,
   useContext,
-  useState,
-  useCallback,
-  useMemo,
   useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
 } from "react";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { supabase } from "../api/supabase-client";
 import {
-  User,
-  UserRole,
-  Permission,
+  getProfileRoleRedirect,
   ROLE_CONFIG,
-  DEMO_USERS,
+  type Permission,
+  type ProfileRecord,
+  type User,
+  type UserRole,
 } from "../types";
-
-// ─── Context Shape ──────────────────────────────────────────────────────────
 
 interface AuthState {
   user: User | null;
+  session: Session | null;
+  profile: ProfileRecord | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isProfileLoading: boolean;
+}
+
+interface LoginResult {
+  success: boolean;
+  error?: string;
+  redirectTo?: string;
+  role?: UserRole;
+}
+
+interface RegisterInput {
+  fullName: string;
+  email: string;
+  password: string;
+}
+
+interface RegisterResult {
+  success: boolean;
+  error?: string;
+  requiresEmailVerification?: boolean;
+  redirectTo?: string;
 }
 
 interface AuthActions {
-  login: (username: string, password: string) => Promise<LoginResult>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  register: (input: RegisterInput) => Promise<RegisterResult>;
+  logout: () => Promise<void>;
+  refreshProfile: () => Promise<ProfileRecord | null>;
   hasPermission: (permission: Permission) => boolean;
   hasRole: (role: UserRole | UserRole[]) => boolean;
 }
 
 export type AuthContextValue = AuthState & AuthActions;
 
-export interface LoginResult {
-  success: boolean;
-  error?: string;
-  redirectTo?: string;
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+function getInitials(fullName: string, email: string) {
+  const parts = fullName
+    .split(" ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return email.slice(0, 2).toUpperCase();
 }
 
-// ─── Context ────────────────────────────────────────────────────────────────
+function buildUser(sessionUser: Session["user"], profile: ProfileRecord): User {
+  const fullName =
+    profile.full_name?.trim() ||
+    (typeof sessionUser.user_metadata?.full_name === "string"
+      ? sessionUser.user_metadata.full_name
+      : "") ||
+    sessionUser.email?.split("@")[0] ||
+    "AXA Staff";
 
-const AuthContext = createContext<AuthContextValue | null>(null);
-AuthContext.displayName = "AXAPRISMAuthContext";
+  const uiRole = profile.role as UserRole;
 
-const SESSION_KEY = "axa_prism_session";
+  return {
+    id: sessionUser.id,
+    name: fullName,
+    email: sessionUser.email ?? "",
+    role: uiRole,
+    profileRole: profile.role,
+    initials: getInitials(fullName, sessionUser.email ?? ""),
+    department: ROLE_CONFIG[uiRole].description,
+  };
+}
 
-// ─── Provider ───────────────────────────────────────────────────────────────
+async function fetchProfileByUserId(userId: string) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, created_at")
+    .eq("id", userId)
+    .maybeSingle();
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as ProfileRecord | null;
+}
+
+async function ensureProfile(sessionUser: Session["user"]) {
+  const profile = await fetchProfileByUserId(sessionUser.id);
+
+  if (!profile) {
+    throw new Error(
+      "Your account exists, but the profile record is missing. Contact an administrator."
+    );
+  }
+
+  return profile;
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<ProfileRecord | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
-  // Restore session from sessionStorage on mount
-  useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(SESSION_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as User;
-        setUser(parsed);
-      }
-    } catch {
-      sessionStorage.removeItem(SESSION_KEY);
-    } finally {
-      setIsLoading(false);
+  const syncProfile = async (nextSession: Session | null) => {
+    setSession(nextSession);
+
+    if (!nextSession?.user) {
+      setProfile(null);
+      setUser(null);
+      setIsProfileLoading(false);
+      return null;
     }
+
+    setIsProfileLoading(true);
+
+    try {
+      const nextProfile = await ensureProfile(nextSession.user);
+      setProfile(nextProfile);
+      setUser(buildUser(nextSession.user, nextProfile));
+      return nextProfile;
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initialize = async () => {
+      try {
+        const {
+          data: { session: activeSession },
+        } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        await syncProfile(activeSession);
+      } catch (error) {
+        console.error("Failed to restore auth session", error);
+        if (isMounted) {
+          setSession(null);
+          setProfile(null);
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initialize();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, nextSession) => {
+        if (!isMounted) return;
+
+        try {
+          await syncProfile(nextSession);
+        } catch (error) {
+          console.error("Failed to synchronize auth state", error);
+          setProfile(null);
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  /**
-   * Authenticate user.
-   *
-   * Next.js migration: replace body with:
-   *   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-   *   Then fetch user role from public.users table.
-   */
-  const login = useCallback(
-    async (username: string, password: string): Promise<LoginResult> => {
-      setIsLoading(true);
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    setIsProfileLoading(true);
 
-      // Simulate network latency
-      await new Promise((r) => setTimeout(r, 800));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      const match = DEMO_USERS[username.toLowerCase()];
-      if (!match || match.password !== password) {
-        setIsLoading(false);
-        return { success: false, error: "Invalid username or password." };
+      if (error) {
+        return { success: false, error: error.message };
       }
 
-      const loggedInUser = match.user;
-      setUser(loggedInUser);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(loggedInUser));
-      setIsLoading(false);
+      if (!data.user) {
+        return { success: false, error: "Unable to resolve the authenticated user." };
+      }
+
+      const nextProfile = await ensureProfile(data.user);
+      const nextUser = buildUser(data.user, nextProfile);
+
+      setSession(data.session ?? null);
+      setProfile(nextProfile);
+      setUser(nextUser);
 
       return {
         success: true,
-        redirectTo: ROLE_CONFIG[loggedInUser.role].defaultRoute,
+        redirectTo: getProfileRoleRedirect(nextProfile.role),
+        role: nextProfile.role,
       };
-    },
-    []
-  );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to sign in right now.";
+      return { success: false, error: message };
+    } finally {
+      setIsProfileLoading(false);
+      setIsLoading(false);
+    }
+  };
 
-  /**
-   * Sign out.
-   * Next.js migration: also call supabase.auth.signOut()
-   */
-  const logout = useCallback(() => {
+  const register = async ({
+    fullName,
+    email,
+    password,
+  }: RegisterInput): Promise<RegisterResult> => {
+    setIsProfileLoading(true);
+
+    try {
+      const emailRedirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/dashboard`
+          : undefined;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+          emailRedirectTo,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      const requiresEmailVerification = !data.session;
+
+      if (!data.user) {
+        return {
+          success: true,
+          requiresEmailVerification,
+          redirectTo: "/login",
+        };
+      }
+
+      if (data.session) {
+        const nextProfile = await ensureProfile(data.user);
+        const nextUser = buildUser(data.user, nextProfile);
+        setSession(data.session);
+        setProfile(nextProfile);
+        setUser(nextUser);
+
+        return {
+          success: true,
+          requiresEmailVerification: false,
+          redirectTo: getProfileRoleRedirect(nextProfile.role),
+        };
+      }
+
+      return {
+        success: true,
+        requiresEmailVerification,
+        redirectTo: "/login",
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to register right now.";
+      return { success: false, error: message };
+    } finally {
+      setIsProfileLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      throw error;
+    }
+
+    setSession(null);
+    setProfile(null);
     setUser(null);
-    sessionStorage.removeItem(SESSION_KEY);
-  }, []);
+  };
 
-  /** Fine-grained permission check */
-  const hasPermission = useCallback(
-    (permission: Permission): boolean => {
-      if (!user) return false;
-      return ROLE_CONFIG[user.role].permissions.includes(permission);
-    },
-    [user]
-  );
+  const refreshProfile = async () => {
+    if (!session?.user) {
+      setProfile(null);
+      setUser(null);
+      return null;
+    }
 
-  /** Role check (single or list of roles) */
-  const hasRole = useCallback(
-    (role: UserRole | UserRole[]): boolean => {
-      if (!user) return false;
-      return Array.isArray(role) ? role.includes(user.role) : user.role === role;
-    },
-    [user]
-  );
+    setIsProfileLoading(true);
+
+    try {
+      const nextProfile = await ensureProfile(session.user);
+      setProfile(nextProfile);
+      setUser(buildUser(session.user, nextProfile));
+      return nextProfile;
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      isAuthenticated: !!user,
+      session,
+      profile,
+      isAuthenticated: Boolean(session?.user && user),
       isLoading,
+      isProfileLoading,
       login,
+      register,
       logout,
-      hasPermission,
-      hasRole,
+      refreshProfile,
+      hasPermission: (permission) =>
+        user ? ROLE_CONFIG[user.role].permissions.includes(permission) : false,
+      hasRole: (role) =>
+        user ? (Array.isArray(role) ? role.includes(user.role) : user.role === role) : false,
     }),
-    [user, isLoading, login, logout, hasPermission, hasRole]
+    [isLoading, isProfileLoading, profile, session, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────────────
+export function useAuth() {
+  const context = useContext(AuthContext);
 
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
+  if (!context) {
     throw new Error("useAuth must be used within <AuthProvider>.");
   }
-  return ctx;
+
+  return context;
 }

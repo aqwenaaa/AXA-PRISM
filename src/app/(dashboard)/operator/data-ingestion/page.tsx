@@ -1,26 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Play, Database, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { Progress } from "@/app/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/app/components/ui/dialog";
+import { validateFile, ingestFile, runIntelligenceEngine, getDataQualityReport } from "@/lib/services/ingestion.service";
 
 export default function DataIngestionPage() {
   const [policyUploaded, setPolicyUploaded] = useState(false);
   const [claimUploaded, setClaimUploaded] = useState(false);
+  const [policyFileName, setPolicyFileName] = useState("policy_data_2026.csv");
+  const [claimsFileName, setClaimsFileName] = useState("claims_data_2026.csv");
+  
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadType, setUploadType] = useState<"policy" | "claims">("policy");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationStatus, setValidationStatus] = useState<"idle" | "validating" | "success" | "error">("idle");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [detectedRowCount, setDetectedRowCount] = useState("0");
 
-  const handleRunEngine = () => {
+  const [qualityReport, setQualityReport] = useState({
+    totalRows: "0",
+    missingValuePercentage: "0%",
+    formatConsistency: "0%"
+  });
+
+  // Pull quality reports dynamically
+  useEffect(() => {
+    async function loadQuality() {
+      const report = await getDataQualityReport(policyUploaded, claimUploaded);
+      setQualityReport({
+        totalRows: report.totalRows,
+        missingValuePercentage: report.missingValuePercentage,
+        formatConsistency: report.formatConsistency
+      });
+    }
+    loadQuality();
+  }, [policyUploaded, claimUploaded]);
+
+  const handleRunEngine = async () => {
     setIsProcessing(true);
-    // Simulate processing
-    setTimeout(() => setIsProcessing(false), 3000);
+    setProcessingProgress(15);
+    
+    try {
+      const result = await runIntelligenceEngine();
+      if (result.success) {
+        setProcessingProgress(66);
+        setTimeout(() => {
+          setProcessingProgress(100);
+          setTimeout(() => {
+            setIsProcessing(false);
+            alert("Intelligence Engine run initiated in background! Check the prediction jobs logs to track completion.");
+          }, 500);
+        }, 1500);
+      } else {
+        setIsProcessing(false);
+        alert("Failed to initiate Intelligence Engine run.");
+      }
+    } catch (err) {
+      setIsProcessing(false);
+      alert("Error invoking Intelligence Engine.");
+    }
   };
 
   const openUploadModal = (type: "policy" | "claims") => {
@@ -28,32 +74,50 @@ export default function DataIngestionPage() {
     setUploadModalOpen(true);
     setSelectedFile(null);
     setValidationStatus("idle");
+    setValidationErrors([]);
+    setDetectedRowCount("0");
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
       setValidationStatus("validating");
+      setValidationErrors([]);
 
-      // Simulate file validation
-      setTimeout(() => {
-        const isValid = file.name.endsWith('.csv') || file.name.endsWith('.xlsx');
-        setValidationStatus(isValid ? "success" : "error");
-      }, 1500);
+      try {
+        const result = await validateFile(file, uploadType);
+        if (result.status === "success") {
+          setValidationStatus("success");
+          setDetectedRowCount(result.rowCount || "0");
+        } else {
+          setValidationStatus("error");
+          setValidationErrors(result.errors || ["Invalid file schema or format."]);
+        }
+      } catch (err) {
+        setValidationStatus("error");
+        setValidationErrors(["Connection failed to the backend."]);
+      }
     }
   };
 
-  const handleUploadConfirm = () => {
+  const handleUploadConfirm = async () => {
     if (validationStatus === "success" && selectedFile) {
-      if (uploadType === "policy") {
-        setPolicyUploaded(true);
-      } else {
-        setClaimUploaded(true);
+      try {
+        await ingestFile(uploadType, selectedFile);
+        if (uploadType === "policy") {
+          setPolicyFileName(selectedFile.name);
+          setPolicyUploaded(true);
+        } else {
+          setClaimsFileName(selectedFile.name);
+          setClaimUploaded(true);
+        }
+        setUploadModalOpen(false);
+        setSelectedFile(null);
+        setValidationStatus("idle");
+      } catch (err) {
+        alert("Failed to confirm ingestion file upload.");
       }
-      setUploadModalOpen(false);
-      setSelectedFile(null);
-      setValidationStatus("idle");
     }
   };
 
@@ -102,9 +166,9 @@ export default function DataIngestionPage() {
                 <div className="flex items-center justify-between bg-success/5 p-3 rounded-lg">
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-success" />
-                    <span className="text-sm font-medium">policy_data_2026.csv</span>
+                    <span className="text-sm font-medium">{policyFileName}</span>
                   </div>
-                  <Badge className="bg-success text-white">45,230 rows</Badge>
+                  <Badge className="bg-success text-white">Parsed & Validated</Badge>
                 </div>
                 <Button 
                   variant="outline" 
@@ -151,9 +215,9 @@ export default function DataIngestionPage() {
                 <div className="flex items-center justify-between bg-success/5 p-3 rounded-lg">
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-success" />
-                    <span className="text-sm font-medium">claims_data_2026.csv</span>
+                    <span className="text-sm font-medium">{claimsFileName}</span>
                   </div>
-                  <Badge className="bg-success text-white">128,456 rows</Badge>
+                  <Badge className="bg-success text-white">Parsed & Validated</Badge>
                 </div>
                 <Button 
                   variant="outline" 
@@ -190,7 +254,7 @@ export default function DataIngestionPage() {
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
             <div className="text-sm text-muted-foreground mb-1">Total Row Count</div>
             <div className="text-3xl font-bold text-foreground mb-1">
-              {policyUploaded && claimUploaded ? "173,686" : "0"}
+              {qualityReport.totalRows}
             </div>
             <div className="flex items-center gap-1 text-xs text-success">
               <CheckCircle2 className="w-3 h-3" />
@@ -202,7 +266,7 @@ export default function DataIngestionPage() {
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
             <div className="text-sm text-muted-foreground mb-1">Missing Values</div>
             <div className="text-3xl font-bold text-foreground mb-1">
-              {policyUploaded && claimUploaded ? "2.3%" : "0%"}
+              {qualityReport.missingValuePercentage}
             </div>
             <div className="flex items-center gap-1 text-xs text-warning">
               <AlertCircle className="w-3 h-3" />
@@ -214,7 +278,7 @@ export default function DataIngestionPage() {
           <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-100">
             <div className="text-sm text-muted-foreground mb-1">Format Consistency</div>
             <div className="text-3xl font-bold text-foreground mb-1">
-              {policyUploaded && claimUploaded ? "98.7%" : "0%"}
+              {qualityReport.formatConsistency}
             </div>
             <div className="flex items-center gap-1 text-xs text-success">
               <CheckCircle2 className="w-3 h-3" />
@@ -274,7 +338,7 @@ export default function DataIngestionPage() {
         
         {isProcessing && (
           <div className="mt-4">
-            <Progress value={66} className="h-2" />
+            <Progress value={processingProgress} className="h-2" />
             <p className="text-xs text-muted-foreground mt-2">Processing data through AI models...</p>
           </div>
         )}
@@ -331,6 +395,7 @@ export default function DataIngestionPage() {
                     onClick={() => {
                       setSelectedFile(null);
                       setValidationStatus("idle");
+                      setValidationErrors([]);
                     }}
                     className="text-muted-foreground hover:text-foreground"
                   >
@@ -360,7 +425,7 @@ export default function DataIngestionPage() {
                         <div className="text-xs text-success/80 mt-1 space-y-1">
                           <div>✓ Schema validation successful</div>
                           <div>✓ Data types validated</div>
-                          <div>✓ {uploadType === "policy" ? "45,230" : "128,456"} rows detected</div>
+                          <div>✓ {detectedRowCount} rows detected</div>
                           <div>✓ No missing critical fields</div>
                         </div>
                       </div>
@@ -374,8 +439,10 @@ export default function DataIngestionPage() {
                       <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
                       <div>
                         <div className="text-sm font-medium text-destructive">Validation failed</div>
-                        <div className="text-xs text-destructive/80 mt-1">
-                          Invalid file format. Please upload CSV or Excel file.
+                        <div className="text-xs text-destructive/80 mt-1 space-y-1">
+                          {validationErrors.map((err, idx) => (
+                            <div key={idx}>✗ {err}</div>
+                          ))}
                         </div>
                       </div>
                     </div>

@@ -11,8 +11,8 @@ def get_user_notifications(current_user: Dict[str, Any] = Depends(get_current_us
     """
     Returns unread alerts tailored to the caller's role.
     """
-    unread = notification_repo.list_unread_by_user(current_user["id"])
-    all_notifs = notification_repo.list_all_by_user(current_user["id"], limit=20)
+    unread = notification_repo.list_unread_by_user(current_user["id"], current_user.get("role"))
+    all_notifs = notification_repo.list_all_by_user(current_user["id"], current_user.get("role"), limit=20)
     
     return {
         "unread_count": len(unread),
@@ -24,13 +24,7 @@ def mark_notification_read(notification_id: str, current_user: Dict[str, Any] = 
     """
     Marks a single notification as read.
     """
-    notif = notification_repo.get_by_id(notification_id, id_field="id")
-    if not notif:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Notification with ID {notification_id} not found."
-        )
-        
+    # Simply execute the update on is_read field
     notification_repo.mark_as_read(notification_id)
     return {"success": True, "detail": "Notification marked as read."}
 
@@ -39,5 +33,5 @@ def mark_all_notifications_read(current_user: Dict[str, Any] = Depends(get_curre
     """
     Marks all notifications for the requesting user as read.
     """
-    notification_repo.mark_all_read(current_user["id"])
+    notification_repo.mark_all_read(current_user["id"], current_user.get("role"))
     return {"success": True, "detail": "All notifications marked as read."}

@@ -40,7 +40,7 @@ export async function getFinancialTrend(): Promise<FinancialTrend[]> {
     { month: "Jan", baseline: 1600, predicted: 1450, savings: 150 },
     { month: "Feb", baseline: 1800, predicted: 1600, savings: 200 },
     { month: "Mar", baseline: 2000, predicted: 1750, savings: 250 },
-    { month: "Apr", baseline: 2100, baseline: 2100, predicted: 1800, savings: 300 },
+    { month: "Apr", baseline: 2100, predicted: 1800, savings: 300 },
   ];
 }
 

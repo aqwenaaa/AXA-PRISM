@@ -130,7 +130,7 @@ export default function DataIngestionPage() {
             <Database className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Data Ingestion (Hulu)</h1>
+            <h1 className="text-3xl font-bold text-foreground">Data Ingestion</h1>
             <p className="text-muted-foreground">External data collection and validation</p>
           </div>
         </div>

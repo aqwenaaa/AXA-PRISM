@@ -191,7 +191,7 @@ export async function getFeatureImportance(): Promise<FeatureImportance[]> {
  */
 export async function getModelMetrics(): Promise<ModelMetrics> {
   try {
-    const response = await apiGet<{ accuracy: number; outlier_count: number; risk_clusters: int }>("/api/v1/dashboard/analyst");
+    const response = await apiGet<{ accuracy: number; outlier_count: number; risk_clusters: number }>("/api/v1/dashboard/analyst");
     if (response) {
       return {
         accuracy: response.accuracy,

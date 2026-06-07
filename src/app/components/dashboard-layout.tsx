@@ -89,9 +89,9 @@ const menuItems: MenuItem[] = [
     path: "/manager/claim-growth",
     icon: Activity,
     label: "Claim Growth Analysis",
-    role: "All Roles",
-    section: "Shared",
-    allowedRoles: "all",
+    role: "Strategic Manager",
+    section: "Operations",
+    allowedRoles: ["admin", "strategic_manager"],
   },
 ];
 
@@ -114,8 +114,8 @@ function DashboardShell({
       <aside className="flex w-64 flex-col border-r border-sidebar-border bg-white">
         <div className="border-b border-sidebar-border p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-purple-600">
-              <Shield className="h-6 w-6 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-white to-white-600">
+              <img src="/assets/logo.png" alt="AXA-PRISM Logo" className="h-9 w-9" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground">AXA-PRISM</h2>

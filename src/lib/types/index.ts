@@ -109,7 +109,7 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     defaultRoute: "/medical-audit",
     color: "#8A70D6",
     gradientClass: "from-primary to-indigo-700",
-    description: "Human-in-the-loop claim verification",
+    description: "Claim verification workflow",
     icon: "Stethoscope",
     permissions: [
       "view:medical-audit",
@@ -221,8 +221,6 @@ export const ROLE_ROUTE_ACCESS: Record<UserRole, string[]> = {
     "/profile",
     "/healthcare",
     "/faq",
-    "/claim-growth",
-    "/manager/claim-growth",
     "/operator/data-ingestion",
   ],
   risk_analyst: [
@@ -238,8 +236,6 @@ export const ROLE_ROUTE_ACCESS: Record<UserRole, string[]> = {
     "/profile",
     "/healthcare",
     "/faq",
-    "/claim-growth",
-    "/manager/claim-growth",
     "/analyst/intelligence-lab",
   ],
   medical_auditor: [
@@ -255,8 +251,6 @@ export const ROLE_ROUTE_ACCESS: Record<UserRole, string[]> = {
     "/profile",
     "/healthcare",
     "/faq",
-    "/claim-growth",
-    "/manager/claim-growth",
     "/auditor/medical-audit",
   ],
   strategic_manager: [

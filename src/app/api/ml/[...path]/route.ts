@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const FLASK_API_BASE_URL = process.env.FLASK_API_BASE_URL ?? "http://127.0.0.1:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 async function proxy(request: NextRequest, method: string, path: string[]) {
   const query = request.nextUrl.searchParams.toString();
   const targetPath = path.join("/");
-  const targetUrl = `${FLASK_API_BASE_URL}/${targetPath}${query ? `?${query}` : ""}`;
+  const targetUrl = `${API_BASE_URL}/${targetPath}${query ? `?${query}` : ""}`;
   const body = method === "GET" || method === "DELETE" ? undefined : await request.text();
 
   const response = await fetch(targetUrl, {

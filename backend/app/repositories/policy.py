@@ -6,8 +6,9 @@ class PolicyRepository(BaseRepository):
         super().__init__("policies")
 
     def get_by_policy_id(self, policy_id: str) -> Optional[Dict[str, Any]]:
-        return self.get_by_id(policy_id, id_field="policy_id")
+        # In actual database, the primary key field is policy_number
+        return self.get_by_id(policy_id, id_field="policy_number")
 
     def count_policies(self) -> int:
-        response = self.client.table("policies").select("policy_id", count="exact").execute()
+        response = self.client.table("policies").select("policy_number", count="exact").execute()
         return response.count or 0

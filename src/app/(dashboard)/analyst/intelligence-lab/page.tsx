@@ -95,7 +95,7 @@ export default function IntelligenceLabPage() {
             <Brain className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Intelligence Lab (The Brain)</h1>
+            <h1 className="text-3xl font-bold text-foreground">Intelligence Lab</h1>
             <p className="text-muted-foreground">Advanced AI analytics and pattern recognition</p>
           </div>
         </div>

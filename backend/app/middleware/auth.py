@@ -1,3 +1,5 @@
+import token
+
 import jwt
 from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -12,12 +14,20 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     Dependency checking the caller's JWT bearer token, fetching role profiles.
     """
     token = credentials.credentials
+
+    print("=" * 50)
+    print("TOKEN RECEIVED:")
+    print(token)
+    print("=" * 50)
+
     try:
         # Step 1: Decode standard JWT segments (sub contains profile user ID)
         # Note: In production Supabase JWTs are validated using PyJWT.
         # We can decode without verification if we trust Supabase middleware proxying,
         # but to be secure we verify using JWT_SECRET (or verify directly via Supabase Auth client).
-        payload = jwt.decode(token, options={"verify_signature": False})
+        payload = jwt.decode(
+        token,
+        options={"verify_signature": False})
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(
@@ -26,7 +36,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             )
             
         # Step 2: Query Profile Database to fetch user role
-        response = supabase_admin.table("profiles").select("*").eq("id", user_id).maybeSingle().execute()
+        response = supabase_admin.table("profiles").select("*").eq("id", user_id).maybe_single().execute()
         profile = response.data
         
         if not profile:

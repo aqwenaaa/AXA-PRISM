@@ -18,6 +18,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   try {
     const { data: { session } } = await supabase.auth.getSession();
     token = session?.access_token;
+    console.log(
+      "[SESSION]",
+      session
+    );
+
+    console.log(
+      "[TOKEN]",
+      session?.access_token
+    );
   } catch (err) {
     console.warn("[API Client] Failed to retrieve Supabase session:", err);
   }

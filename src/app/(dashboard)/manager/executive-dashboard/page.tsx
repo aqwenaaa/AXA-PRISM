@@ -77,7 +77,7 @@ export default function ExecutiveDashboardPage() {
             <TrendingUp className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Executive Command (Hilir)</h1>
+            <h1 className="text-3xl font-bold text-foreground">Executive Command</h1>
             <p className="text-muted-foreground">Strategic insights and policy implementation</p>
           </div>
         </div>

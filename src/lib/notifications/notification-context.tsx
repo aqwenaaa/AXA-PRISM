@@ -1,11 +1,4 @@
-/**
- * AXA-PRISM Notification System
- *
- * Tracks real-time events:
- * - User management changes (add, edit role, status change)
- * - System errors (model failures, ingestion issues)
- * - Model deployments
- */
+"use client";
 
 import React, {
   createContext,
@@ -13,7 +6,9 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useEffect,
 } from "react";
+import { apiGet, apiPut, apiPost } from "../api/api-client";
 
 export type NotificationType =
   | "user_added"
@@ -22,7 +17,13 @@ export type NotificationType =
   | "system_error"
   | "model_deployed"
   | "model_error"
-  | "ingestion_warning";
+  | "ingestion_warning"
+  | "calibration_changed"
+  | "audit_submitted"
+  | "recommendation_action"
+  | "engine_started"
+  | "engine_completed"
+  | "engine_failed";
 
 export type NotificationSeverity = "info" | "warning" | "error" | "success";
 
@@ -35,6 +36,7 @@ export interface AppNotification {
   timestamp: string;
   read: boolean;
   metadata?: Record<string, unknown>;
+  actionUrl?: string;
 }
 
 interface NotificationContextValue {
@@ -46,21 +48,21 @@ interface NotificationContextValue {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
+  refresh: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
-// ── Initial mock notifications ──────────────────────────────────────────────
+// ── Initial mock notifications fallback ──────────────────────────────────────
 
-const INITIAL_NOTIFICATIONS: AppNotification[] = [
+const FALLBACK_NOTIFICATIONS: AppNotification[] = [
   {
     id: "notif-001",
     type: "system_error",
     severity: "error",
     title: "Model Inference Error",
-    message:
-      "Anomaly detection model timed out for claim batch #2024-05-06. Retry scheduled in 5 minutes.",
-    timestamp: "2026-05-06 14:15:00",
+    message: "Anomaly detection model timed out for claim batch #2024-05-06. Retry scheduled.",
+    timestamp: new Date().toISOString().substring(0, 19).replace('T', ' '),
     read: false,
   },
   {
@@ -68,50 +70,19 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
     type: "user_edited",
     severity: "info",
     title: "User Role Updated",
-    message:
-      "Dr. Budi Santoso role changed to Medical Auditor by Administrator.",
-    timestamp: "2026-05-06 13:45:00",
+    message: "Dr. Budi Santoso role changed to Medical Auditor by Administrator.",
+    timestamp: new Date().toISOString().substring(0, 19).replace('T', ' '),
     read: false,
   },
   {
     id: "notif-003",
-    type: "ingestion_warning",
-    severity: "warning",
-    title: "Data Ingestion Warning",
-    message:
-      "12 records with missing fields found in latest upload batch. Manual review required.",
-    timestamp: "2026-05-06 12:30:00",
-    read: false,
-  },
-  {
-    id: "notif-004",
     type: "model_deployed",
     severity: "success",
     title: "Model Deployed Successfully",
-    message:
-      "Fraud Detection API v2.5 is now active and available for Risk Analyst role.",
-    timestamp: "2026-05-05 16:00:00",
+    message: "Ensemble regressor and anomaly detection models are now active.",
+    timestamp: new Date().toISOString().substring(0, 19).replace('T', ' '),
     read: true,
-  },
-  {
-    id: "notif-005",
-    type: "user_added",
-    severity: "success",
-    title: "New User Registered",
-    message: "Ahmad Fauzi has been added as Data Operator by Administrator.",
-    timestamp: "2026-05-05 10:30:00",
-    read: true,
-  },
-  {
-    id: "notif-006",
-    type: "model_error",
-    severity: "warning",
-    title: "FastAPI Endpoint Unreachable",
-    message:
-      "Clustering model endpoint /api/v1/cluster returned HTTP 503. Fallback model active.",
-    timestamp: "2026-05-04 18:15:00",
-    read: true,
-  },
+  }
 ];
 
 // ── Provider ────────────────────────────────────────────────────────────────
@@ -121,8 +92,49 @@ export function NotificationProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [notifications, setNotifications] =
-    useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [useFallback, setUseFallback] = useState(false);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await apiGet<any>("/api/v1/notifications");
+      if (res && res.notifications) {
+        const mapped: AppNotification[] = res.notifications.map((n: any) => ({
+          id: n.id,
+          type: n.type || "system_error",
+          severity: n.severity || "info",
+          title: n.title || "Alert",
+          message: n.message || "",
+          timestamp: n.created_at 
+            ? n.created_at.substring(0, 19).replace('T', ' ')
+            : new Date().toISOString().substring(0, 19).replace('T', ' '),
+          read: n.is_read || n.read || false,
+          actionUrl: n.action_url || n.actionUrl || ""
+        }));
+        setNotifications(mapped);
+        setUseFallback(false);
+      } else {
+        // Empty response or unmigrated DB setup
+        if (notifications.length === 0) {
+          setNotifications(FALLBACK_NOTIFICATIONS);
+          setUseFallback(true);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load notifications from API, using fallback memory state.", err);
+      if (notifications.length === 0) {
+        setNotifications(FALLBACK_NOTIFICATIONS);
+        setUseFallback(true);
+      }
+    }
+  }, [notifications.length]);
+
+  // Load and poll notifications
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   const addNotification = useCallback(
     (notification: Omit<AppNotification, "id" | "timestamp" | "read">) => {
@@ -143,15 +155,33 @@ export function NotificationProvider({
     []
   );
 
-  const markAsRead = useCallback((id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
+    // Optimistic UI update
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-  }, []);
 
-  const markAllAsRead = useCallback(() => {
+    if (!useFallback) {
+      try {
+        await apiPut(`/api/v1/notifications/${id}/read`, {});
+      } catch (err) {
+        console.error("Failed to mark notification as read on server:", err);
+      }
+    }
+  }, [useFallback]);
+
+  const markAllAsRead = useCallback(async () => {
+    // Optimistic UI update
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+
+    if (!useFallback) {
+      try {
+        await apiPost("/api/v1/notifications/read-all", {});
+      } catch (err) {
+        console.error("Failed to mark all notifications read on server:", err);
+      }
+    }
+  }, [useFallback]);
 
   const clearAll = useCallback(() => {
     setNotifications([]);
@@ -167,6 +197,7 @@ export function NotificationProvider({
       markAsRead,
       markAllAsRead,
       clearAll,
+      refresh: fetchNotifications
     }),
     [
       notifications,
@@ -175,6 +206,7 @@ export function NotificationProvider({
       markAsRead,
       markAllAsRead,
       clearAll,
+      fetchNotifications
     ]
   );
 

@@ -108,6 +108,9 @@ class CFWeights(BaseModel):
 class SystemSettingsSchema(BaseModel):
     cf_weights: CFWeights
     anomaly_threshold: int = Field(default=85, ge=50, le=100)
+    updated_by_name: Optional[str] = "System Default"
+    updated_at_str: Optional[str] = None
+
 
 # Dashboard Response Schemas
 class AdminDashboardResponse(BaseModel):
@@ -130,6 +133,8 @@ class AnalystDashboardResponse(BaseModel):
     risk_clusters: int
     scatter_data: List[Dict[str, Any]]
     feature_importance: List[Dict[str, Any]]
+    claims_sample: Optional[List[Dict[str, Any]]] = None
+
 
 class AuditorDashboardResponse(BaseModel):
     pending_reviews: int
@@ -144,3 +149,5 @@ class ManagerDashboardResponse(BaseModel):
     model_confidence: float
     risk_tier_distribution: List[Dict[str, Any]]
     strategic_actions: List[Dict[str, Any]]
+    monthly_growth: Optional[List[Dict[str, Any]]] = None
+    category_growth: Optional[List[Dict[str, Any]]] = None

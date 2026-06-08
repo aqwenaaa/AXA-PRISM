@@ -24,6 +24,8 @@ export function mapClaimToUI(claim: any): ClaimRecord {
     uiStatus = "fraud";
   } else if (claim.status === "over_treatment" || claim.status === "overtreatment") {
     uiStatus = "rejected";
+  } else if (claim.status === "requires_review" || claim.status === "requires-review") {
+    uiStatus = "requires_review";
   }
 
   // Safe tier mapping based on risk cluster (1=Low, 2=Medium, 3=High, 4=Critical)
@@ -60,7 +62,7 @@ export function mapClaimToUI(claim: any): ClaimRecord {
     hospital: claim.hospital_name || "Metropolitan General Hospital",
     diagnosis: diagnosisMap[code] || "Medical Procedure",
     expectedCost: claim.expected_claim_cost || 2100,
-    actualCost: claim.actual_claim_cost || 7500,
+    actualCost: claim.approved_claim_cost || claim.actual_claim_cost || 7500,
     anomalyScore: claim.anomaly_score ? parseFloat((claim.anomaly_score * 100).toFixed(1)) : 98.5,
     date: claim.created_at ? claim.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10),
     status: uiStatus,
@@ -68,8 +70,13 @@ export function mapClaimToUI(claim: any): ClaimRecord {
     diagnosisCode: code,
     hospitalTier: claim.hospital_tier || "Tier A",
     treatmentDuration: claim.treatment_duration || 8,
+    residual: claim.residual || 0,
+    cfScore: claim.cf_score ? parseFloat((claim.cf_score * 100).toFixed(1)) : 0.0,
+    finalRiskScore: claim.final_risk_score ? parseFloat((claim.final_risk_score * 100).toFixed(1)) : 0.0,
+    edasRank: claim.dss_rank || claim.edas_rank || 0,
   };
 }
+
 
 // ─── Dynamic Service Functions ───────────────────────────────────────────────
 
@@ -108,7 +115,9 @@ export async function submitAuditDecision(decision: AuditDecision): Promise<void
   const statusMap: Record<string, string> = {
     "valid": "valid",
     "overtreatment": "over_treatment",
-    "fraud": "fraud"
+    "fraud": "fraud",
+    "requires_review": "requires_review",
+    "requires-review": "requires_review"
   };
 
   const payload = {
@@ -120,6 +129,7 @@ export async function submitAuditDecision(decision: AuditDecision): Promise<void
 
   await apiPost<any, any>("/api/v1/claims/audit", payload);
 }
+
 
 /**
  * Trigger AI model retraining with collected feedback.

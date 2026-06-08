@@ -111,10 +111,19 @@ class ClaimRepository(BaseRepository):
                 formatted["risk_cluster"] = ml_data.get("risk_cluster")
                 formatted["cf_score"] = ml_data.get("cf_score")
                 
-                # Dynamic mappings avoiding database schema alterations (Constraint 2)
-                if anomaly is not None:
-                    anomaly_f = float(anomaly)
-                    formatted["final_risk_score"] = anomaly_f
-                    formatted["recommended_action"] = "audit_claim" if anomaly_f > 0.5 else "approve"
+                # Dynamic mappings prioritizing database columns
+                db_final_risk = ml_data.get("final_risk_score")
+                db_rec_action = ml_data.get("recommended_action")
+                
+                if db_final_risk is not None:
+                    formatted["final_risk_score"] = float(db_final_risk)
+                elif anomaly is not None:
+                    formatted["final_risk_score"] = float(anomaly)
+                    
+                if db_rec_action is not None:
+                    formatted["recommended_action"] = db_rec_action
+                elif anomaly is not None:
+                    formatted["recommended_action"] = "audit_claim" if float(anomaly) > 0.5 else "approve"
                 
         return formatted
+

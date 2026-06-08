@@ -61,85 +61,36 @@ class IngestionService:
             except Exception as e:
                 print(f"Error loading calibration settings: {e}")
             
+            # Instantiate MLService & run inference
+            from app.services.ml_service import MLService
+            ml_svc = MLService()
+            
+            processed_results = ml_svc.execute_inference_batch(
+                claim_ids=claim_ids,
+                age_weight=age_w,
+                bmi_weight=bmi_w,
+                smoker_weight=smoker_w,
+                anomaly_threshold=anomaly_threshold
+            )
+            
             total_records = len(claim_ids)
             processed = 0
             anomalies = 0
             
-            # Process in chunks of 1 to simulate work
-            for cid in claim_ids:
-                await asyncio.sleep(1.0) # Simulate latency
+            # Upsert results and increment progress log
+            for record in processed_results:
+                await asyncio.sleep(0.5) # Simulate small progress delay for UI feel
                 processed += 1
                 
-                claim = self.claim_repo.get_by_id(cid, id_field="claim_id")
-                is_anomaly = False
-                if claim:
-                    app_cost = float(claim.get("approved_claim_cost", 0.0))
-                    hosp_cost = float(claim.get("hospital_cost", 0.0))
+                if record.get("recommended_action") == "audit_claim":
+                    anomalies += 1
                     
-                    # 1. Resolve Age from Policy
-                    age = 45
-                    p_num = claim.get("policy_number")
-                    if p_num:
-                        policy = self.policy_repo.get_by_id(p_num, id_field="policy_number")
-                        if policy and policy.get("birth_date"):
-                            try:
-                                birth_year = int(policy["birth_date"].split("-")[0])
-                                age = 2026 - birth_year
-                            except Exception:
-                                pass
-                    norm_age = age / 100.0
+                try:
+                    self.claim_repo.client.table("processed_claims").upsert(record, on_conflict="claim_id").execute()
+                except Exception as e:
+                    print(f"Error upserting processed claim: {e}")
                     
-                    # 2. Simulate BMI and Smoker status deterministically based on claim_id hash
-                    cid_hash = hash(cid)
-                    bmi = (cid_hash % 15) + 18
-                    norm_bmi = (bmi - 18.0) / 15.0
-                    
-                    smoker = 1.0 if (cid_hash % 5 == 0) else 0.0
-                    
-                    # 3. Compute CF Score using dynamic weights
-                    total_w = age_w + bmi_w + smoker_w
-                    if total_w > 0:
-                        cf_score = (age_w * norm_age + bmi_w * norm_bmi + smoker_w * smoker) / total_w
-                    else:
-                        cf_score = 0.5
-                    
-                    # 4. Compute Anomaly Score using residual ratio
-                    ratio = hosp_cost / app_cost if app_cost > 0 else 1.0
-                    if ratio >= 1.8:
-                        anomaly_score = 0.8 + 0.18 * (ratio - 1.8) / 10.0
-                        risk_cluster = 3
-                    elif ratio >= 1.2:
-                        anomaly_score = 0.4 + 0.35 * (ratio - 1.2) / 0.6
-                        risk_cluster = 2
-                    else:
-                        anomaly_score = 0.05 + 0.25 * (ratio - 1.0) / 0.2 if ratio >= 1.0 else 0.05
-                        risk_cluster = 1
-                        
-                    # 5. Compute Final Risk Score
-                    final_risk_score = (anomaly_score * 0.6) + (cf_score * 0.4)
-                    
-                    # 6. Apply Calibration Threshold to classify Anomaly
-                    if final_risk_score >= (anomaly_threshold / 100.0):
-                        is_anomaly = True
-                        anomalies += 1
-                        
-                    # upsert processed claim ML parameters
-                    ml_data = {
-                        "claim_id": cid,
-                        "expected_claim_cost": app_cost * 0.4 if not is_anomaly else app_cost * 0.28,
-                        "residual": hosp_cost - app_cost,
-                        "anomaly_score": float(anomaly_score),
-                        "risk_cluster": int(risk_cluster),
-                        "cf_score": float(cf_score),
-                        "final_risk_score": float(final_risk_score),
-                        "recommended_action": "approve" if not is_anomaly else "audit_claim"
-                    }
-                    try:
-                        self.claim_repo.client.table("processed_claims").upsert(ml_data, on_conflict="claim_id").execute()
-                    except Exception as e:
-                        print(f"Error upserting processed claim ML parameters: {e}")
-
-                # Update incremental progress
+                # Update progress tracking
                 self.job_repo.update(job_id, {
                     "records_processed": processed,
                     "anomaly_detected": anomalies
@@ -152,6 +103,20 @@ class IngestionService:
                 "completed_at": datetime.now().isoformat()
             }, id_field="job_id")
             
+            # Trigger notification
+            try:
+                from app.services.notification_service import notification_service
+                notification_service.create_notification(
+                    type_str="engine_completed",
+                    severity="success",
+                    title="Intelligence Engine Inference Completed",
+                    message=f"Analytical execution completed successfully. Processed {processed} records, detected {anomalies} anomalies.",
+                    recipient_role="risk_analyst",
+                    action_url="/analyst/intelligence-lab"
+                )
+            except Exception as e:
+                print(f"Failed to issue engine completed notification: {e}")
+            
         except Exception as err:
             # Catch errors, flag prediction job as failed
             self.job_repo.update(job_id, {
@@ -160,6 +125,20 @@ class IngestionService:
                 "error_message": str(err),
                 "completed_at": datetime.now().isoformat()
             }, id_field="job_id")
+            
+            # Trigger notification
+            try:
+                from app.services.notification_service import notification_service
+                notification_service.create_notification(
+                    type_str="engine_failed",
+                    severity="error",
+                    title="Intelligence Engine Inference Failed",
+                    message=f"Engine prediction pipeline run failed: {str(err)[:100]}.",
+                    recipient_role="risk_analyst",
+                    action_url="/analyst/intelligence-lab"
+                )
+            except Exception as e:
+                print(f"Failed to issue engine failed notification: {e}")
 
     def parse_and_validate_csv(self, filename: str, content: str, file_type: str, processed_by: str) -> Dict[str, Any]:
         """

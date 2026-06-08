@@ -279,7 +279,9 @@ export type ClaimStatus =
   | "approved"
   | "rejected"
   | "investigating"
-  | "fraud";
+  | "fraud"
+  | "requires_review";
+
 export type RiskTier =
   | "Low Risk"
   | "Medium Risk"
@@ -300,7 +302,12 @@ export interface ClaimRecord {
   diagnosisCode?: string;
   hospitalTier?: string;
   treatmentDuration?: number;
+  residual?: number;
+  cfScore?: number;
+  finalRiskScore?: number;
+  edasRank?: number;
 }
+
 
 export interface ClaimHistory {
   date: string;
@@ -309,7 +316,8 @@ export interface ClaimHistory {
   status: "approved" | "rejected";
 }
 
-export type AuditDecisionType = "valid" | "overtreatment" | "fraud";
+export type AuditDecisionType = "valid" | "overtreatment" | "fraud" | "requires_review";
+
 
 export interface AuditDecision {
   claimId: string;

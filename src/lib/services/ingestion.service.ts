@@ -157,3 +157,15 @@ export async function getDataQualityReport(
     dateFormatCheck: true,
   };
 }
+
+/**
+ * Fetch recent prediction jobs to monitor progress dynamically.
+ */
+export async function getPredictionJobs(): Promise<any[]> {
+  try {
+    return await apiGet<any[]>("/api/v1/predict/jobs");
+  } catch (err) {
+    console.error("[IngestionService] Failed to fetch prediction jobs:", err);
+    return [];
+  }
+}

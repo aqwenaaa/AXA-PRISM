@@ -701,7 +701,7 @@ export default function UserManagementPage() {
                 User Management
               </h1>
               <p className="text-sm text-muted-foreground">
-                The Control Center — Manage team roles, permissions, and access
+                Manage team roles, permissions, and access
               </p>
             </div>
           </div>

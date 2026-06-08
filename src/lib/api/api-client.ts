@@ -1,9 +1,12 @@
 import { supabase } from "./supabase-client";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const isBrowser = typeof window !== "undefined";
+const API_BASE_URL = isBrowser ? "/api/ml" : (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000");
 
 interface RequestOptions extends RequestInit {
   timeoutMs?: number;
+  /** If true, skip the request entirely when no auth token is available */
+  requiresAuth?: boolean;
 }
 
 /**
@@ -11,27 +14,23 @@ interface RequestOptions extends RequestInit {
  * Automatically reads the client session to inject the active Supabase Auth JWT.
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { timeoutMs = 15000, ...fetchOptions } = options;
+  const { timeoutMs = 30000, requiresAuth = true, ...fetchOptions } = options;
 
   // 1. Retrieve the active access token directly from the Supabase client
   let token: string | undefined = undefined;
   try {
     const { data: { session } } = await supabase.auth.getSession();
     token = session?.access_token;
-    console.log(
-      "[SESSION]",
-      session
-    );
-
-    console.log(
-      "[TOKEN]",
-      session?.access_token
-    );
-  } catch (err) {
-    console.warn("[API Client] Failed to retrieve Supabase session:", err);
+  } catch {
+    // Session retrieval failed — will proceed without token
   }
 
-  // 2. Build request headers
+  // 2. If auth is required but no token exists, fail fast instead of sending a 401-destined request
+  if (requiresAuth && !token) {
+    throw new Error("No active authentication session. Please log in.");
+  }
+
+  // 3. Build request headers
   const headers = new Headers(fetchOptions.headers);
   if (!(fetchOptions.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
@@ -42,19 +41,22 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  // 3. Handle timeout controls
+  // 4. Handle timeout controls
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+  const method = fetchOptions.method ?? "GET";
+  const fullUrl = `${API_BASE_URL}${path}`;
+
   try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await fetch(fullUrl, {
       ...fetchOptions,
       headers,
       signal: controller.signal,
     });
 
     if (response.status === 401) {
-      console.warn("[API Client] 401 Unauthorized returned from backend. JWT token is invalid or expired.");
+      console.warn("[API Client] 401 Unauthorized — JWT token may be invalid or expired.");
     }
 
     if (!response.ok) {

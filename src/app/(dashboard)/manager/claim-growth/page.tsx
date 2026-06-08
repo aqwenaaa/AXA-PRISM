@@ -156,6 +156,28 @@ export default function ClaimGrowthPage() {
     };
   });
 
+  // Dynamic database charts and KPI metrics binding
+  const liveMonthlyData = managerData.monthly_growth && managerData.monthly_growth.length > 0
+    ? managerData.monthly_growth
+    : monthlyGrowthData;
+
+  const liveCategoryData = managerData.category_growth && managerData.category_growth.length > 0
+    ? managerData.category_growth
+    : categoryData;
+
+  const totalClaimsSum = liveMonthlyData.reduce((acc: number, curr: any) => acc + curr.claims, 0);
+  const monthlyAvg = Math.round(totalClaimsSum / liveMonthlyData.length);
+  const totalCostSum = liveMonthlyData.reduce((acc: number, curr: any) => acc + curr.cost, 0);
+  const dynamicAvgCost = totalClaimsSum > 0 ? Math.round(totalCostSum / totalClaimsSum) : 2251;
+
+  const formatCost = (val: number) => {
+    return val > 100000 ? "Rp " + val.toLocaleString() : "$" + val.toLocaleString();
+  };
+
+  const formatMillions = (val: number) => {
+    return val > 100000 ? "Rp " + (val / 1000000).toFixed(1) + "M" : "$" + (val / 1000000).toFixed(1) + "M";
+  };
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -187,9 +209,9 @@ export default function ClaimGrowthPage() {
             <ArrowUpRight className="w-5 h-5 text-destructive" />
           </div>
           <p className="text-sm text-muted-foreground mb-1">Total Claims (16mo)</p>
-          <p className="text-3xl font-bold text-foreground mb-1">203,350</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{totalClaimsSum.toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">
-            Monthly avg: 12,709 claims
+            Monthly avg: {monthlyAvg.toLocaleString()} claims
           </p>
         </Card>
 
@@ -200,7 +222,7 @@ export default function ClaimGrowthPage() {
           </div>
           <p className="text-sm text-muted-foreground mb-1">Forecast Savings</p>
           <p className="text-3xl font-bold text-foreground mb-1">
-            ${(managerData.predicted_savings / 1000000).toFixed(1)}M
+            {formatMillions(managerData.predicted_savings)}
           </p>
           <p className="text-xs text-success font-medium">
             AI-predicted optimization
@@ -213,9 +235,9 @@ export default function ClaimGrowthPage() {
             <TrendingUp className="w-5 h-5 text-destructive" />
           </div>
           <p className="text-sm text-muted-foreground mb-1">Avg Cost/Claim</p>
-          <p className="text-3xl font-bold text-foreground mb-1">$2,251</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{formatCost(dynamicAvgCost)}</p>
           <p className="text-xs text-destructive">
-            +33.5% since Jan 2025
+            Dynamic database average
           </p>
         </Card>
 
@@ -244,7 +266,7 @@ export default function ClaimGrowthPage() {
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={monthlyGrowthData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={liveMonthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorClaims" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8A70D6" stopOpacity={0.3} />
@@ -285,11 +307,11 @@ export default function ClaimGrowthPage() {
         <Card className="p-6 bg-white rounded-xl border border-border">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Total Claim Cost Progression</h3>
-            <p className="text-sm text-muted-foreground">Financial impact over time (in millions)</p>
+            <p className="text-sm text-muted-foreground">Financial impact over time</p>
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyGrowthData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <LineChart data={liveMonthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis
                 dataKey="month"
@@ -301,7 +323,7 @@ export default function ClaimGrowthPage() {
               />
               <YAxis
                 stroke="#6B7280"
-                tickFormatter={(value) => `$${(value / 1000000).toFixed(0)}M`}
+                tickFormatter={(value) => formatMillions(value)}
               />
               <Tooltip
                 contentStyle={{
@@ -310,7 +332,7 @@ export default function ClaimGrowthPage() {
                   borderRadius: '12px',
                   padding: '12px'
                 }}
-                formatter={(value: number) => `$${(value / 1000000).toFixed(1)}M`}
+                formatter={(value: number) => formatCost(value)}
               />
               <Line
                 type="monotone"
@@ -332,7 +354,7 @@ export default function ClaimGrowthPage() {
         </div>
 
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={categoryData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={liveCategoryData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
             <XAxis dataKey="category" stroke="#6B7280" />
             <YAxis stroke="#6B7280" />
@@ -351,7 +373,7 @@ export default function ClaimGrowthPage() {
         </ResponsiveContainer>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
-          {categoryData.map((cat) => (
+          {liveCategoryData.map((cat: any) => (
             <div
               key={cat.category}
               className="p-3 rounded-lg border border-border hover:border-primary/50 transition-all"

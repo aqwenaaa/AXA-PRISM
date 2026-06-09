@@ -2,6 +2,11 @@ from app.repositories.claim import ClaimRepository
 from app.repositories.policy import PolicyRepository
 from app.repositories.profile import ProfileRepository
 from typing import Dict, Any, List
+from app.repositories.notification import NotificationRepository
+
+
+
+_cached_feature_importance = None
 
 class AnalyticsService:
     def __init__(self):
@@ -23,14 +28,14 @@ class AnalyticsService:
             "model_version": "v2.4.3",
             "recent_activities": [
                 {
-                    "user": "Dr. Sari Dewi",
+                    "user": "Faiza Anatasya",
                     "action": "detected 3 new anomalies",
                     "module": "Intelligence Lab",
                     "time": "5 minutes ago",
                     "severity": "info"
                 },
                 {
-                    "user": "Ahmad Fauzi",
+                    "user": "Nervalina",
                     "action": "uploaded claims dataset",
                     "module": "Data Ingestion",
                     "time": "12 minutes ago",
@@ -54,7 +59,7 @@ class AnalyticsService:
                 {
                     "id": "JOB-2026-01",
                     "type": "claims",
-                    "filename": "claims_data_2026.csv",
+                    "filename": "Data_Klaim.csv",
                     "rowCount": total_claims if total_claims > 0 else 128456,
                     "status": "completed",
                     "timestamp": "2026-05-30T10:00:00Z"
@@ -62,7 +67,7 @@ class AnalyticsService:
                 {
                     "id": "JOB-2026-02",
                     "type": "policy",
-                    "filename": "policy_data_2026.csv",
+                    "filename": "Data_Polis.csv",
                     "rowCount": total_policies if total_policies > 0 else 45230,
                     "status": "completed",
                     "timestamp": "2026-05-30T09:30:00Z"
@@ -78,51 +83,57 @@ class AnalyticsService:
         import os
         import joblib
         import numpy as np
-        
+
+        global _cached_feature_importance
+
         # Base directories
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         models_dir = os.path.join(base_dir, "app", "resources", "models")
         reg_path = os.path.join(models_dir, "random_forest_regressor.joblib")
-        
-        # 1. Feature Importance (dynamic fallback)
-        feature_importance = [
-            { "feature": "Hospital Tier", "importance": 92, "color": "#8A70D6" },
-            { "feature": "Diagnosis Code", "importance": 87, "color": "#8A70D6" },
-            { "feature": "Treatment Duration", "importance": 78, "color": "#8A70D6" },
-            { "feature": "Patient Age", "importance": 65, "color": "#F2994A" }
-        ]
-        
-        if os.path.exists(reg_path):
-            try:
-                reg_model = joblib.load(reg_path)
-                importances = reg_model.feature_importances_
-                reg_features = [
-                    'usia_nasabah', 'gender_enc', 'is_cashless', 'is_inpatient', 
-                    'domicile_enc', 'hospital_location_enc', 'icd_diagnosis_enc'
-                ]
-                # Map names to user friendly UI titles
-                ui_feature_map = {
-                    'usia_nasabah': 'Patient Age',
-                    'gender_enc': 'Gender',
-                    'is_cashless': 'Claim Type (Cashless)',
-                    'is_inpatient': 'Patient Type (Inpatient)',
-                    'domicile_enc': 'Customer Domicile',
-                    'hospital_location_enc': 'Hospital Location',
-                    'icd_diagnosis_enc': 'Diagnosis Code'
-                }
-                
-                sorted_idx = np.argsort(importances)[::-1]
-                feature_importance = []
-                for idx_rank, i in enumerate(sorted_idx):
-                    feat = reg_features[i]
-                    importance_val = int(importances[i] * 100)
-                    feature_importance.append({
-                        "feature": ui_feature_map.get(feat, feat),
-                        "importance": importance_val,
-                        "color": "#8A70D6" if idx_rank < 3 else "#F2994A"
-                    })
-            except Exception as e:
-                print(f"Failed to load RF feature importances: {e}")
+
+        if _cached_feature_importance is not None:
+            feature_importance = _cached_feature_importance
+        else:
+            # 1. Feature Importance (dynamic fallback)
+            feature_importance = [
+                { "feature": "Hospital Tier", "importance": 92, "color": "#8A70D6" },
+                { "feature": "Diagnosis Code", "importance": 87, "color": "#8A70D6" },
+                { "feature": "Treatment Duration", "importance": 78, "color": "#8A70D6" },
+                { "feature": "Patient Age", "importance": 65, "color": "#F2994A" }
+            ]
+
+            if os.path.exists(reg_path):
+                try:
+                    reg_model = joblib.load(reg_path)
+                    importances = reg_model.feature_importances_
+                    reg_features = [
+                        'usia_nasabah', 'gender_enc', 'is_cashless', 'is_inpatient',
+                        'domicile_enc', 'hospital_location_enc', 'icd_diagnosis_enc'
+                    ]
+                    # Map names to user friendly UI titles
+                    ui_feature_map = {
+                        'usia_nasabah': 'Patient Age',
+                        'gender_enc': 'Gender',
+                        'is_cashless': 'Claim Type (Cashless)',
+                        'is_inpatient': 'Patient Type (Inpatient)',
+                        'domicile_enc': 'Customer Domicile',
+                        'hospital_location_enc': 'Hospital Location',
+                        'icd_diagnosis_enc': 'Diagnosis Code'
+                    }
+
+                    sorted_idx = np.argsort(importances)[::-1]
+                    feature_importance = []
+                    for idx_rank, i in enumerate(sorted_idx):
+                        feat = reg_features[i]
+                        importance_val = int(importances[i] * 100)
+                        feature_importance.append({
+                            "feature": ui_feature_map.get(feat, feat),
+                            "importance": importance_val,
+                            "color": "#8A70D6" if idx_rank < 3 else "#F2994A"
+                        })
+                    _cached_feature_importance = feature_importance
+                except Exception as e:
+                    print(f"Failed to load RF feature importances: {e}")
                 
         # 2. Dynamic Scatter Data and Claims Sample
         scatter_points = []
@@ -220,11 +231,41 @@ class AnalyticsService:
         """
         Pulls pending anomalous claims count and auditor lists.
         """
-        claims = self.claim_repo.list_claims_with_ml(status="pending", limit=10)
+        claims = []
+        try:
+            res = self.claim_repo.client.table("processed_claims").select(
+                "*, claims(*)"
+            ).execute()
+            for rec in (res.data or []):
+                claim = rec.get("claims")
+                if not claim or claim.get("status") != "pending":
+                    continue
+
+                recommended_action = rec.get("recommended_action")
+                risk_cluster = int(rec.get("risk_cluster") or 0)
+                if recommended_action != "audit_claim" and risk_cluster != 3:
+                    continue
+
+                merged = dict(claim)
+                merged.update({
+                    "expected_claim_cost": rec.get("expected_claim_cost"),
+                    "residual": rec.get("residual"),
+                    "anomaly_score": rec.get("anomaly_score"),
+                    "risk_cluster": rec.get("risk_cluster"),
+                    "cf_score": rec.get("cf_score"),
+                    "final_risk_score": rec.get("final_risk_score"),
+                    "recommended_action": rec.get("recommended_action"),
+                })
+                claims.append(merged)
+        except Exception as e:
+            print(f"Error fetching auditor processed claims: {e}")
         
         return {
             "pending_reviews": len(claims) if len(claims) > 0 else 4,
-            "avg_anomaly_score": 95.4,
+            "avg_anomaly_score": round(
+                sum(float(c.get("anomaly_score") or 0.0) for c in claims) / len(claims) * 100,
+                1
+            ) if claims else 0.0,
             "reviewed_today": 12,
             "claims": claims
         }
@@ -235,15 +276,25 @@ class AnalyticsService:
         """
         import collections
 
-        # 1. Fetch claims from DB
+        # 1. Fetch verified audit outcomes first. Manager views only reviewed claims.
         try:
-            res = self.claim_repo.client.table("claims").select(
-                "claim_id, approved_claim_cost, status, payment_date, icd_description"
-            ).execute()
-            claims = res.data or []
+            audit_res = self.claim_repo.client.table("audit_logs").select("claim_id, final_label").execute()
+            audits = {x["claim_id"]: x for x in (audit_res.data or []) if x.get("claim_id")}
         except Exception as e:
-            print(f"Error fetching claims for manager metrics: {e}")
-            claims = []
+            print(f"Error fetching audits for manager metrics: {e}")
+            audits = {}
+
+        claims = []
+        audited_claim_ids = list(audits.keys())
+        if audited_claim_ids:
+            try:
+                res = self.claim_repo.client.table("claims").select(
+                    "claim_id, approved_claim_cost, status, payment_date, icd_description"
+                ).in_("claim_id", audited_claim_ids).execute()
+                claims = res.data or []
+            except Exception as e:
+                print(f"Error fetching audited claims for manager metrics: {e}")
+                claims = []
             
         # 2. Fetch processed_claims
         try:
@@ -254,14 +305,6 @@ class AnalyticsService:
         except Exception as e:
             print(f"Error fetching processed claims for manager metrics: {e}")
             processed_claims = {}
-            
-        # 3. Fetch audit logs
-        try:
-            audit_res = self.claim_repo.client.table("audit_logs").select("claim_id, final_label").execute()
-            audits = {x["claim_id"]: x for x in (audit_res.data or []) if x.get("claim_id")}
-        except Exception as e:
-            print(f"Error fetching audits for manager metrics: {e}")
-            audits = {}
 
         # 4. Fetch recommendations
         try:

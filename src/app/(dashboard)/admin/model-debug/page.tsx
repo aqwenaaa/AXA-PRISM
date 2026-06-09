@@ -54,7 +54,7 @@ type ModelCategory =
   | "clustering"
   | "regression"
   | "classification"
-  | "nlp";
+  | "prediction";
 
 // Roles that can use custom models — Admin is EXCLUDED by design
 const ASSIGNABLE_ROLES: UserRole[] = [
@@ -148,23 +148,6 @@ const MOCK_MODELS: ModelEndpoint[] = [
     apiKey: "sk-prod-axaprism-regr-****",
     tags: ["staging", "regression", "cost-prediction"],
   },
-  {
-    id: "mdl-004",
-    name: "Diagnosis Code NLP",
-    description:
-      "BERT-based NLP classifier for validating ICD-10 diagnosis codes against clinical narrative descriptions.",
-    category: "nlp",
-    endpoint: "http://fastapi.axa-prism.internal/api/v1/nlp/icd-validate",
-    version: "1.0.0-beta",
-    status: "testing",
-    assignedRoles: ["medical_auditor"],
-    lastTested: "2026-05-06 11:00:00",
-    latencyMs: 350,
-    accuracy: 88.1,
-    createdAt: "2026-05-01",
-    apiKey: "sk-dev-axaprism-nlp-****",
-    tags: ["beta", "nlp", "bert", "icd-10"],
-  },
 ];
 
 const EMPTY_FORM: ModelFormData = {
@@ -202,7 +185,7 @@ const CATEGORY_CONFIG: Record<
     color: "#2563EB",
     bg: "rgba(37,99,235,0.1)",
   },
-  nlp: { label: "NLP", color: "#4338CA", bg: "rgba(67,56,202,0.1)" },
+  prediction: { label: "Prediction", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
 };
 
 const STATUS_CONFIG: Record<

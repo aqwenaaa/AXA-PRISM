@@ -75,13 +75,72 @@ class StrategicRecommendationRepository(BaseRepository):
             recs = self._get_fallback_recommendations()
             
         if not recs:
-            recs = self._get_fallback_recommendations()
+            recs = self._generate_from_verified_audits()
             
         try:
             return self.run_recommendation_edas(recs)
         except Exception as e:
             print(f"Failed to apply EDAS ranking to recommendations: {e}")
             return recs
+
+    def _generate_from_verified_audits(self) -> List[Dict[str, Any]]:
+        try:
+            audit_res = self.client.table("audit_logs").select("claim_id, final_label").execute()
+            audits = [row for row in (audit_res.data or []) if row.get("claim_id")]
+            if not audits:
+                return []
+
+            claim_ids = [row["claim_id"] for row in audits]
+            claims_res = self.client.table("claims").select(
+                "claim_id, approved_claim_cost, hospital_location, icd_description, status"
+            ).in_("claim_id", claim_ids).execute()
+            claims_by_id = {row["claim_id"]: row for row in (claims_res.data or []) if row.get("claim_id")}
+
+            processed_res = self.client.table("processed_claims").select(
+                "claim_id, final_risk_score, anomaly_score, risk_cluster, recommended_action, residual"
+            ).in_("claim_id", claim_ids).execute()
+            processed_by_id = {row["claim_id"]: row for row in (processed_res.data or []) if row.get("claim_id")}
+
+            new_recs = []
+            for audit in audits:
+                claim_id = audit["claim_id"]
+                claim = claims_by_id.get(claim_id)
+                processed = processed_by_id.get(claim_id)
+                if not claim or not processed:
+                    continue
+
+                final_label = audit.get("final_label")
+                if final_label == "valid":
+                    continue
+
+                risk_score = float(processed.get("final_risk_score") or processed.get("anomaly_score") or 0.0)
+                approved_cost = float(claim.get("approved_claim_cost") or 0.0)
+                residual = abs(float(processed.get("residual") or 0.0))
+                estimated_savings = residual if residual > 0 else approved_cost
+                priority = "CRITICAL" if risk_score >= 0.85 else ("HIGH" if risk_score >= 0.65 else "MEDIUM")
+                diagnosis = claim.get("icd_description") or "audited medical claim"
+                location = claim.get("hospital_location") or "provider network"
+
+                new_recs.append({
+                    "title": f"Control action for {diagnosis[:48]}",
+                    "description": f"Apply strategic controls for verified {final_label} claim {claim_id} at {location}.",
+                    "priority": priority,
+                    "confidence": round(min(99.0, max(50.0, risk_score * 100)), 2),
+                    "estimated_savings": round(estimated_savings, 2),
+                    "status": "PENDING",
+                    "reasoning": f"Medical audit labelled claim {claim_id} as {final_label}; processed model risk score is {risk_score:.2f}.",
+                    "source_claim_id": claim_id,
+                    "created_at": datetime.now().isoformat()
+                })
+
+            if not new_recs:
+                return []
+
+            insert_res = self.client.table("strategic_recommendations").insert(new_recs).execute()
+            return insert_res.data or new_recs
+        except Exception as e:
+            print(f"Failed to generate recommendations from verified audits: {e}")
+            return []
 
     def update_recommendation(self, rec_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         try:

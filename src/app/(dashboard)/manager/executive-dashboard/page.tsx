@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, DollarSign, Shield, Target, ArrowUpRight, CheckCircle2, AlertTriangle, TrendingDown, Check, X, Edit3, Lightbulb } from "lucide-react";
+import { TrendingUp, DollarSign, Shield, Target, ArrowUpRight, CheckCircle2, AlertTriangle, TrendingDown, Check, X, Edit3, Lightbulb, Coins, CoinsIcon, HandCoinsIcon } from "lucide-react";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
@@ -204,7 +204,7 @@ export default function ExecutiveDashboardPage() {
             <Card className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl animate-fade-in">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
-                  <DollarSign className="w-6 h-6 text-white" />
+                  <CoinsIcon className="w-6 h-6 text-white" />
                 </div>
                 <ArrowUpRight className="w-5 h-5 text-destructive" />
               </div>
@@ -486,7 +486,7 @@ export default function ExecutiveDashboardPage() {
                       <div className="flex flex-wrap items-center justify-between border-t border-border pt-4 mt-2 gap-4">
                         <div className="flex flex-wrap items-center gap-6">
                           <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4 text-success" />
+                            <HandCoinsIcon className="w-4 h-4 text-success" />
                             <span className="text-xs text-muted-foreground">Est. Savings:</span>
                             <span className="text-sm font-bold text-success">{formatCurrency(action.estimated_savings || action.savings)}</span>
                           </div>

@@ -10,6 +10,8 @@ class NotificationRepository(BaseRepository):
         """
         Lists unread alerts for a specific user ID or recipient role.
         """
+        import time
+        start_time = time.perf_counter()
         try:
             query = self.client.table("notifications").select("*")
             if user_role:
@@ -17,12 +19,17 @@ class NotificationRepository(BaseRepository):
             else:
                 query = query.eq("recipient_user_id", user_id)
             response = query.eq("is_read", False).order("created_at", desc=True).execute()
-            return response.data or []
+            res = response.data or []
         except Exception as e:
             print(f"Failed to list unread notifications: {e}")
-            return self._get_fallback_notifications(unread_only=True)
+            res = self._get_fallback_notifications(unread_only=True)
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        print(f"[NotificationRepository.list_unread_by_user] duration_ms={duration_ms:.2f}ms")
+        return res
 
     def list_all_by_user(self, user_id: str, user_role: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
+        import time
+        start_time = time.perf_counter()
         try:
             query = self.client.table("notifications").select("*")
             if user_role:
@@ -30,10 +37,13 @@ class NotificationRepository(BaseRepository):
             else:
                 query = query.eq("recipient_user_id", user_id)
             response = query.order("created_at", desc=True).limit(limit).execute()
-            return response.data or []
+            res = response.data or []
         except Exception as e:
             print(f"Failed to list all notifications: {e}")
-            return self._get_fallback_notifications(unread_only=False)
+            res = self._get_fallback_notifications(unread_only=False)
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        print(f"[NotificationRepository.list_all_by_user] duration_ms={duration_ms:.2f}ms")
+        return res
 
     def mark_as_read(self, notification_id: str) -> Dict[str, Any]:
         try:

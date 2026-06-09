@@ -103,7 +103,7 @@ function buildUser(sessionUser: Session["user"], profile: ProfileRecord): User {
 async function fetchProfileByUserId(userId: string) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, role, created_at")
+    .select("id, email, full_name, role, avatar_url, created_at")
     .eq("id", userId)
     .maybeSingle();
 

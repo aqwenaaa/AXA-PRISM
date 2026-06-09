@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Play, Database, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
@@ -33,8 +33,14 @@ export default function DataIngestionPage() {
   });
 
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const fetchJobsInFlightRef = useRef(false);
 
   const fetchJobs = async () => {
+    if (fetchJobsInFlightRef.current) {
+      return;
+    }
+
+    fetchJobsInFlightRef.current = true;
     try {
       const data = await getPredictionJobs();
       setRecentJobs(data || []);
@@ -52,6 +58,8 @@ export default function DataIngestionPage() {
       }
     } catch (err) {
       console.error("Failed to fetch prediction jobs:", err);
+    } finally {
+      fetchJobsInFlightRef.current = false;
     }
   };
 
@@ -155,7 +163,7 @@ export default function DataIngestionPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">Data Ingestion</h1>
-            <p className="text-muted-foreground">External data collection and validation</p>
+            <p className="text-muted-foreground">External data collection and validation. Always make sure to rename your file to Data_Klaim.csv and Data_Polis.csv before uploading.</p>
           </div>
         </div>
         <Badge className="bg-primary/10 text-primary border-primary/20">
@@ -182,7 +190,7 @@ export default function DataIngestionPage() {
             
             <h3 className="text-xl font-semibold mb-2">Policy Data Upload</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-              Upload insurance policy master data (CSV, Excel, or JSON format)
+              Upload insurance policy master data provided (CSV format)
             </p>
             
             {policyUploaded ? (
@@ -231,7 +239,7 @@ export default function DataIngestionPage() {
             
             <h3 className="text-xl font-semibold mb-2">Claims Data Upload</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-              Upload claims transaction data with cost details
+              Upload claims transaction data with cost details (CSV format)
             </p>
             
             {claimUploaded ? (
@@ -472,7 +480,7 @@ export default function DataIngestionPage() {
               Upload {uploadType === "policy" ? "Policy Data" : "Claims Data"}
             </DialogTitle>
             <DialogDescription>
-              Upload CSV or Excel file with {uploadType === "policy" ? "insurance policy master data" : "claims transaction data"}
+              Upload CSV file with {uploadType === "policy" ? "insurance policy master data" : "claims transaction data"}
             </DialogDescription>
           </DialogHeader>
 
@@ -494,7 +502,7 @@ export default function DataIngestionPage() {
                   <Upload className="w-8 h-8 text-primary" />
                 </div>
                 <p className="text-sm font-medium mb-1">Click to browse files</p>
-                <p className="text-xs text-muted-foreground">Supported formats: CSV, Excel (.xlsx, .xls)</p>
+                <p className="text-xs text-muted-foreground">Supported formats: .csv</p>
               </label>
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Brain, TrendingUp, Award, AlertTriangle, Settings, Users, Clock, ShieldAlert, Sparkles, CheckCircle, Activity, Database } from "lucide-react";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -25,13 +25,21 @@ export default function IntelligenceLabPage() {
   const [claimsSample, setClaimsSample] = useState<any[]>([]);
   
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const fetchJobsInFlightRef = useRef(false);
 
   const fetchJobs = async () => {
+    if (fetchJobsInFlightRef.current) {
+      return;
+    }
+
+    fetchJobsInFlightRef.current = true;
     try {
       const data = await getPredictionJobs();
       setRecentJobs(data || []);
     } catch (err) {
       console.error("Failed to fetch jobs in analyst:", err);
+    } finally {
+      fetchJobsInFlightRef.current = false;
     }
   };
 
@@ -531,7 +539,7 @@ export default function IntelligenceLabPage() {
             <TrendingUp className="w-5 h-5 text-primary" />
             Trained Regressor Feature Importances
           </h3>
-          <p className="text-sm text-muted-foreground">Dynamic weights directly extracted from random_forest_regressor.joblib</p>
+          <p className="text-sm text-muted-foreground">Dynamic weights directly extracted from Random Forest Regressor</p>
         </div>
         
         <ResponsiveContainer width="100%" height={320}>

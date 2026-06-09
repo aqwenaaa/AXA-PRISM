@@ -5,11 +5,60 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
 import { ArrowLeft, User, Mail, Phone, Building2, Shield, Edit, Camera, Save, Bell, Lock } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/api/supabase-client";
+import { useAuth } from "@/lib/auth/auth-context";
+import { ROLE_CONFIG } from "@/lib/types";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { user, profile, isLoading, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("+1 (555) 123-4567");
+
+  useEffect(() => {
+    if (profile?.full_name) {
+      const parts = profile.full_name.trim().split(" ");
+      setFirstName(parts[0] || "");
+      setLastName(parts.slice(1).join(" ") || "");
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    if (!profile) return;
+    setIsSaving(true);
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: fullName })
+        .eq("id", profile.id);
+
+      if (error) {
+        throw error;
+      }
+      
+      await refreshProfile();
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error("Error updating profile:", err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -20,7 +69,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/50 rounded-lg transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-5 h-5 text-foreground" />
               </button>
@@ -31,11 +80,14 @@ export default function ProfilePage() {
             </div>
 
             <Button
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={isEditing ? handleSave : () => setIsEditing(true)}
               variant={isEditing ? "default" : "outline"}
               className={isEditing ? "bg-primary text-white" : ""}
+              disabled={isSaving}
             >
-              {isEditing ? (
+              {isSaving ? (
+                "Saving..."
+              ) : isEditing ? (
                 <>
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
@@ -61,10 +113,10 @@ export default function ProfilePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="glass rounded-2xl p-8 text-center">
+            <div className="glass rounded-2xl p-8 text-center bg-white border border-border">
               <div className="relative inline-block mb-6">
                 <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-4xl font-semibold shadow-lg shadow-primary/20">
-                  JD
+                  {user?.initials || "JD"}
                 </div>
                 {isEditing && (
                   <motion.button
@@ -79,22 +131,32 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              <h2 className="text-2xl font-semibold text-foreground mb-2">John Doe</h2>
-              <p className="text-sm text-muted-foreground mb-1">Strategic Manager</p>
-              <p className="text-xs text-muted-foreground mb-6">Member since Jan 2024</p>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">{user?.name || "AXA Staff"}</h2>
+              <p className="text-sm text-muted-foreground mb-1">
+                {user?.role ? ROLE_CONFIG[user.role].label : "Staff"}
+              </p>
+              <p className="text-xs text-muted-foreground mb-6">
+                Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString("id-ID", { year: "numeric", month: "long" }) : "Jan 2024"}
+              </p>
 
               <div className="flex flex-col gap-3">
-                <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20">
+                <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 text-left">
                   <div className="text-xs text-muted-foreground mb-1">Role</div>
-                  <div className="text-sm font-medium text-foreground">Administrator</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {user?.role ? ROLE_CONFIG[user.role].label : "Staff"}
+                  </div>
                 </div>
-                <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20">
+                <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 text-left">
                   <div className="text-xs text-muted-foreground mb-1">Department</div>
-                  <div className="text-sm font-medium text-foreground">Risk Management</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {user?.department || "Operations"}
+                  </div>
                 </div>
-                <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20">
+                <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 text-left">
                   <div className="text-xs text-muted-foreground mb-1">Access Level</div>
-                  <div className="text-sm font-medium text-primary">Full Access</div>
+                  <div className="text-sm font-medium text-primary">
+                    {user?.role === "admin" ? "Full Access" : "Role-Based Access"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -108,7 +170,7 @@ export default function ProfilePage() {
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             {/* Personal Information */}
-            <div className="glass rounded-2xl p-8">
+            <div className="glass rounded-2xl p-8 bg-white border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
                 <User className="w-5 h-5 text-primary" />
                 Personal Information
@@ -119,7 +181,8 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-foreground mb-2">First Name</label>
                   <input
                     type="text"
-                    defaultValue="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     disabled={!isEditing}
                     className={`w-full px-4 py-3 rounded-xl border ${
                       isEditing
@@ -133,7 +196,8 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-foreground mb-2">Last Name</label>
                   <input
                     type="text"
-                    defaultValue="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     disabled={!isEditing}
                     className={`w-full px-4 py-3 rounded-xl border ${
                       isEditing
@@ -149,38 +213,18 @@ export default function ProfilePage() {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input
                       type="email"
-                      defaultValue="john.doe@axaprism.com"
-                      disabled={!isEditing}
-                      className={`w-full pl-11 pr-4 py-3 rounded-xl border ${
-                        isEditing
-                          ? 'border-primary/30 bg-white'
-                          : 'border-border bg-muted/30'
-                      } text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                      value={profile?.email || user?.email || ""}
+                      disabled={true}
+                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-muted/30 text-muted-foreground cursor-not-allowed focus:outline-none"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Phone Number</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input
-                      type="tel"
-                      defaultValue="+1 (555) 123-4567"
-                      disabled={!isEditing}
-                      className={`w-full pl-11 pr-4 py-3 rounded-xl border ${
-                        isEditing
-                          ? 'border-primary/30 bg-white'
-                          : 'border-border bg-muted/30'
-                      } text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
 
             {/* Company Information */}
-            <div className="glass rounded-2xl p-8">
+            <div className="glass rounded-2xl p-8 bg-white border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-primary" />
                 Company Information
@@ -192,12 +236,8 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     defaultValue="AXA Global Healthcare"
-                    disabled={!isEditing}
-                    className={`w-full px-4 py-3 rounded-xl border ${
-                      isEditing
-                        ? 'border-primary/30 bg-white'
-                        : 'border-border bg-muted/30'
-                    } text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                    disabled={true}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-muted/30 text-muted-foreground cursor-not-allowed focus:outline-none"
                   />
                 </div>
 
@@ -205,13 +245,9 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-foreground mb-2">Job Title</label>
                   <input
                     type="text"
-                    defaultValue="Strategic Manager"
-                    disabled={!isEditing}
-                    className={`w-full px-4 py-3 rounded-xl border ${
-                      isEditing
-                        ? 'border-primary/30 bg-white'
-                        : 'border-border bg-muted/30'
-                    } text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                    value={user?.role ? ROLE_CONFIG[user.role].label : "Staff"}
+                    disabled={true}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-muted/30 text-muted-foreground cursor-not-allowed focus:outline-none"
                   />
                 </div>
 
@@ -219,20 +255,16 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-foreground mb-2">Office Location</label>
                   <input
                     type="text"
-                    defaultValue="New York, NY - USA"
-                    disabled={!isEditing}
-                    className={`w-full px-4 py-3 rounded-xl border ${
-                      isEditing
-                        ? 'border-primary/30 bg-white'
-                        : 'border-border bg-muted/30'
-                    } text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                    defaultValue="Level 28, 123 Pitt Street, Angel Place, Sydney, New South Wales 2000"
+                    disabled={true}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-muted/30 text-muted-foreground cursor-not-allowed focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             {/* Preferences */}
-            <div className="glass rounded-2xl p-8">
+            <div className="glass rounded-2xl p-8 bg-white border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary" />
                 Preferences & Settings
@@ -288,36 +320,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Activity Summary */}
-            <div className="glass rounded-2xl p-8">
-              <h3 className="text-lg font-semibold text-foreground mb-6">Recent Activity</h3>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-1">
-                    142
-                  </div>
-                  <div className="text-sm text-muted-foreground">Claims Reviewed</div>
-                  <div className="text-xs text-primary mt-1">This Month</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-1">
-                    28
-                  </div>
-                  <div className="text-sm text-muted-foreground">Anomalies Detected</div>
-                  <div className="text-xs text-primary mt-1">This Week</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-1">
-                    45h
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Session Time</div>
-                  <div className="text-xs text-primary mt-1">This Month</div>
-                </div>
-              </div>
-            </div>
+           
           </motion.div>
         </div>
       </div>

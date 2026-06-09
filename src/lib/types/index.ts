@@ -150,8 +150,10 @@ export interface User {
 /** Demo credentials — replace with Supabase auth in production */
 export interface ProfileRecord {
   id: string;
+  email: string;
   full_name: string | null;
   role: ProfileRole;
+  avatar_url: string | null;
   created_at: string | null;
 }
 

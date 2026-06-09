@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, Sparkles, Calendar, DollarSign, AlertCircle, Activity, ArrowUpRight, Brain } from "lucide-react";
+import { TrendingUp, Sparkles, Calendar, HandCoinsIcon, AlertCircle, Activity, ArrowUpRight, Brain } from "lucide-react";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -217,7 +217,7 @@ export default function ClaimGrowthPage() {
 
         <Card className="p-5 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 rounded-xl">
           <div className="flex items-center justify-between mb-3">
-            <DollarSign className="w-8 h-8 text-success" />
+            <HandCoinsIcon className="w-8 h-8 text-success" />
             <TrendingUp className="w-5 h-5 text-destructive" />
           </div>
           <p className="text-sm text-muted-foreground mb-1">Forecast Savings</p>
@@ -451,7 +451,7 @@ export default function ClaimGrowthPage() {
 
                   <div className="flex items-center gap-4 mt-3">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-success" />
+                      <HandCoinsIcon className="w-4 h-4 text-success" />
                       <span className="text-sm font-medium text-success">{insight.impact}</span>
                     </div>
                     <div className="flex items-center gap-2">

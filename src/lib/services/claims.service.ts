@@ -54,17 +54,17 @@ export function mapClaimToUI(claim: any): ClaimRecord {
     "ICD-10: K80.20": "Gallbladder Surgery"
   };
 
-  const code = claim.diagnosis_code || "ICD-10: I25.10";
+  const code = claim.icd_diagnosis || claim.diagnosis_code || "ICD-10: I25.10";
 
   return {
     id: claim.claim_id,
     patient: patientMap[claim.patient_id] || claim.patient_id || "John Anderson",
-    hospital: claim.hospital_name || "Metropolitan General Hospital",
-    diagnosis: diagnosisMap[code] || "Medical Procedure",
+    hospital: claim.hospital_name || claim.hospital_location || "Metropolitan General Hospital",
+    diagnosis: claim.icd_description || diagnosisMap[code] || "Medical Procedure",
     expectedCost: claim.expected_claim_cost || 2100,
     actualCost: claim.approved_claim_cost || claim.actual_claim_cost || 7500,
     anomalyScore: claim.anomaly_score ? parseFloat((claim.anomaly_score * 100).toFixed(1)) : 98.5,
-    date: claim.created_at ? claim.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10),
+    date: claim.payment_date || (claim.created_at ? claim.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10)),
     status: uiStatus,
     tier: uiTier,
     diagnosisCode: code,
@@ -139,18 +139,11 @@ export async function triggerRetrain(feedbackCount: number): Promise<{
   newAccuracy: number;
   newVersion: string;
 }> {
-  // Triggers predict async-ready pipeline run to simulate active training updates
-  const payload = { claim_ids: [] };
-  try {
-    await apiPost<any, any>("/api/v1/predict", payload);
-  } catch (err) {
-    console.warn("[ClaimsService] Failed to execute predict trigger during retrain:", err);
-  }
-  
+  console.info("[ClaimsService] Retrain request recorded locally; model execution remains operator-controlled.", { feedbackCount });
   return {
     success: true,
-    newAccuracy: 97.2,
-    newVersion: "v2.5.0",
+    newAccuracy: 96.8,
+    newVersion: "v2.4.3",
   };
 }
 

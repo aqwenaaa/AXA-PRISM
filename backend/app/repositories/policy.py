@@ -12,3 +12,16 @@ class PolicyRepository(BaseRepository):
     def count_policies(self) -> int:
         response = self.client.table("policies").select("policy_number", count="exact").execute()
         return response.count or 0
+
+    def bulk_upsert(self, policies: List[Dict[str, Any]]) -> int:
+        if not policies:
+            return 0
+        written = 0
+        for idx in range(0, len(policies), 500):
+            batch = policies[idx:idx + 500]
+            response = self.client.table("policies").upsert(
+                batch,
+                on_conflict="policy_number"
+            ).execute()
+            written += len(response.data or batch)
+        return written

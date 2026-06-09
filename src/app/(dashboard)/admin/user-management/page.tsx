@@ -7,13 +7,13 @@
  * - Edit full user details via modal
  * - Role badges with color coding
  * - Status indicators (Active/Inactive)
- * - Last login tracking
  * - RBAC Guard: Admin role rows are protected (role field locked)
  */
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/api/supabase-client";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Users,
@@ -164,11 +164,13 @@ function UserDialog({
   user,
   onClose,
   onSave,
+  isSubmitting,
 }: {
   mode: DialogMode;
   user: SystemUser | null;
   onClose: () => void;
   onSave: (data: UserFormData, userId?: string) => void;
+  isSubmitting: boolean;
 }) {
   const isEdit = mode === "edit";
   const isAdminUser = user?.role === "admin";
@@ -512,9 +514,16 @@ function UserDialog({
                   <Button
                     type="submit"
                     className="flex-1 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white"
+                    disabled={isSubmitting}
                   >
-                    <Save className="w-4 h-4 mr-2" />
-                    {isEdit ? "Save Changes" : "Create User"}
+                    {isSubmitting ? (
+                      "Saving..."
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {isEdit ? "Save Changes" : "Create User"}
+                      </>
+                    )}
                   </Button>
                 </div>
               </form>
@@ -532,10 +541,12 @@ function DeleteConfirmDialog({
   user,
   onClose,
   onConfirm,
+  isSubmitting,
 }: {
   user: SystemUser | null;
   onClose: () => void;
   onConfirm: (id: string) => void;
+  isSubmitting: boolean;
 }) {
   if (!user) return null;
 
@@ -580,9 +591,16 @@ function DeleteConfirmDialog({
               <Button
                 onClick={() => onConfirm(user.id)}
                 className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90 text-white"
+                disabled={isSubmitting}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+                {isSubmitting ? (
+                  "Deleting..."
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -595,12 +613,57 @@ function DeleteConfirmDialog({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<SystemUser[]>(MOCK_USERS);
+  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isActionSubmitting, setIsActionSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SystemUser | null>(null);
   const { addNotification } = useNotifications();
+
+  const DEPARTMENT_MAPPING: Record<UserRole, string> = {
+    admin: "System Administration",
+    data_operator: "Data Management Unit",
+    risk_analyst: "Risk Intelligence Division",
+    medical_auditor: "Medical Audit Department",
+    strategic_manager: "Executive Management",
+  };
+
+  const fetchUsers = async () => {
+    setIsLoadingData(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedUsers: SystemUser[] = data.map((profile: any) => ({
+          id: profile.id,
+          name: profile.full_name || "AXA Staff",
+          email: profile.email || "",
+          role: profile.role,
+          status: "active",
+          lastLogin: profile.created_at
+            ? new Date(profile.created_at).toLocaleDateString("id-ID")
+            : "Active",
+          department: DEPARTMENT_MAPPING[profile.role as UserRole] || "Operations",
+        }));
+        setUsers(mappedUsers);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch users:", err.message);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -624,63 +687,88 @@ export default function UserManagementPage() {
     setSelectedUser(null);
   };
 
-  const handleSave = (data: UserFormData, userId?: string) => {
-    if (userId) {
-      // Edit existing
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId
-            ? {
-                ...u,
-                name: data.name,
-                email: data.email,
-                role: u.role === "admin" ? "admin" : data.role, // lock admin role
-                status: data.status,
-                department: data.department,
-              }
-            : u
-        )
-      );
-      addNotification({
-        type: "user_edited",
-        severity: "info",
-        title: "User Updated",
-        message: `${data.name}'s profile has been updated by Administrator.`,
-      });
-    } else {
-      // Add new
-      const newUser: SystemUser = {
-        id: `usr-${Date.now()}`,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-        status: data.status,
-        lastLogin: "Never",
-        department: data.department,
-      };
-      setUsers((prev) => [...prev, newUser]);
-      addNotification({
-        type: "user_added",
-        severity: "success",
-        title: "New User Added",
-        message: `${data.name} has been added as ${ROLE_CONFIG[data.role].label} by Administrator.`,
-      });
+  const handleSave = async (data: UserFormData, userId?: string) => {
+    setIsActionSubmitting(true);
+    try {
+      if (userId) {
+        const res = await fetch("/api/admin/users", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: userId,
+            name: data.name,
+            role: data.role,
+            email: data.email,
+            password: data.password || undefined,
+          }),
+        });
+
+        const resData = await res.json();
+        if (!res.ok) throw new Error(resData.error || "Failed to update user");
+
+        addNotification({
+          type: "user_edited",
+          severity: "info",
+          title: "User Updated",
+          message: `${data.name}'s profile has been updated by Administrator.`,
+        });
+      } else {
+        const res = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: data.name,
+            role: data.role,
+            email: data.email,
+            password: data.password,
+          }),
+        });
+
+        const resData = await res.json();
+        if (!res.ok) throw new Error(resData.error || "Failed to create user");
+
+        addNotification({
+          type: "user_added",
+          severity: "success",
+          title: "New User Added",
+          message: `${data.name} has been added as ${ROLE_CONFIG[data.role].label} by Administrator.`,
+        });
+      }
+      await fetchUsers();
+      closeDialog();
+    } catch (err: any) {
+      alert(err.message || "An error occurred");
+    } finally {
+      setIsActionSubmitting(false);
     }
-    closeDialog();
   };
 
-  const handleDelete = (userId: string) => {
+  const handleDelete = async (userId: string) => {
     const user = users.find((u) => u.id === userId);
-    setUsers((prev) => prev.filter((u) => u.id !== userId));
-    if (user) {
-      addNotification({
-        type: "user_deleted",
-        severity: "warning",
-        title: "User Deleted",
-        message: `${user.name} (${ROLE_CONFIG[user.role].label}) has been removed from the system.`,
+    setIsActionSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/users?id=${userId}`, {
+        method: "DELETE",
       });
+
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "Failed to delete user");
+
+      if (user) {
+        addNotification({
+          type: "user_deleted",
+          severity: "warning",
+          title: "User Deleted",
+          message: `${user.name} (${ROLE_CONFIG[user.role].label}) has been removed from the system.`,
+        });
+      }
+      await fetchUsers();
+    } catch (err: any) {
+      alert(err.message || "An error occurred");
+    } finally {
+      setIsActionSubmitting(false);
+      setDeleteTarget(null);
     }
-    setDeleteTarget(null);
   };
 
   return (
@@ -827,7 +915,7 @@ export default function UserManagementPage() {
                     "Department",
                     "Role",
                     "Status",
-                    "Last Login",
+                    "Created At",
                     "Actions",
                   ].map((h) => (
                     <th
@@ -840,7 +928,14 @@ export default function UserManagementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredUsers.map((user, index) => (
+                {isLoadingData ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-3"></div>
+                      <p className="text-muted-foreground text-sm">Loading database profiles...</p>
+                    </td>
+                  </tr>
+                ) : filteredUsers.map((user, index) => (
                   <motion.tr
                     key={user.id}
                     className="hover:bg-sidebar-accent/50 transition-colors"
@@ -990,6 +1085,7 @@ export default function UserManagementPage() {
         user={selectedUser}
         onClose={closeDialog}
         onSave={handleSave}
+        isSubmitting={isActionSubmitting}
       />
 
       {deleteTarget && (
@@ -997,6 +1093,7 @@ export default function UserManagementPage() {
           user={deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onConfirm={handleDelete}
+          isSubmitting={isActionSubmitting}
         />
       )}
     </div>

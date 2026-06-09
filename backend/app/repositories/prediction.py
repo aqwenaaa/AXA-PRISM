@@ -21,15 +21,17 @@ class PredictionJobRepository(BaseRepository):
             }
 
     def get_recent_jobs(self, limit: int = 10) -> List[Dict[str, Any]]:
+        import time
+        start_time = time.perf_counter()
         try:
             response = self.client.table("prediction_jobs")\
                 .select("*")\
                 .order("created_at", desc=True)\
                 .limit(limit)\
                 .execute()
-            return response.data or []
+            res = response.data or []
         except Exception:
-            return [
+            res = [
                 {
                     "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
                     "status": "completed",
@@ -40,3 +42,6 @@ class PredictionJobRepository(BaseRepository):
                     "completed_at": datetime.now().isoformat()
                 }
             ]
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        print(f"[PredictionJobRepository.get_recent_jobs] duration_ms={duration_ms:.2f}ms")
+        return res

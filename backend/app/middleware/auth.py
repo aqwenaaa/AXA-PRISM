@@ -1,5 +1,3 @@
-import token
-
 import jwt
 from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -14,11 +12,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     Dependency checking the caller's JWT bearer token, fetching role profiles.
     """
     token = credentials.credentials
-
-    print("=" * 50)
-    print("TOKEN RECEIVED:")
-    print(token)
-    print("=" * 50)
 
     try:
         # Step 1: Decode standard JWT segments (sub contains profile user ID)
@@ -36,8 +29,15 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             )
             
         # Step 2: Query Profile Database to fetch user role
-        response = supabase_admin.table("profiles").select("*").eq("id", user_id).maybe_single().execute()
-        profile = response.data
+        try:
+            response = supabase_admin.table("profiles").select("*").eq("id", user_id).maybe_single().execute()
+            profile = response.data
+        except Exception as err:
+            print(f"[Auth] Failed to fetch profile for user {user_id}: {err}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication profile lookup is temporarily unavailable."
+            )
         
         if not profile:
             raise HTTPException(

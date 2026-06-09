@@ -6,13 +6,18 @@ from typing import Dict, Any, List
 router = APIRouter()
 notification_repo = NotificationRepository()
 
+import time
+
 @router.get("")
 def get_user_notifications(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Returns unread alerts tailored to the caller's role.
     """
+    start_time = time.perf_counter()
     unread = notification_repo.list_unread_by_user(current_user["id"], current_user.get("role"))
     all_notifs = notification_repo.list_all_by_user(current_user["id"], current_user.get("role"), limit=20)
+    duration_ms = (time.perf_counter() - start_time) * 1000
+    print(f"[API Route GET /notifications] duration_ms={duration_ms:.2f}ms")
     
     return {
         "unread_count": len(unread),

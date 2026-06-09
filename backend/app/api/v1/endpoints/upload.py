@@ -11,21 +11,23 @@ async def upload_policy_csv(file: UploadFile = File(...), current_user: Dict[str
     """
     Ingests and validates CSV containing policy records.
     """
-    if not (file.filename.endswith(".csv") or file.filename.endswith(".xlsx")):
+    if not file.filename.endswith(".csv"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file format. Please upload CSV or Excel files."
+            detail="Invalid file format. Please upload CSV files."
         )
         
     contents = await file.read()
-    content_str = contents.decode("utf-8")
-    
-    result = ingestion_svc.parse_and_validate_csv(
-        filename=file.filename,
-        content=content_str,
-        file_type="policy",
-        processed_by=current_user["id"]
-    )
+    try:
+        content_str = contents.decode("utf-8-sig")
+        result = ingestion_svc.parse_and_validate_csv(
+            filename=file.filename,
+            content=content_str,
+            file_type="policy",
+            processed_by=current_user["id"]
+        )
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
     
     return {
         "success": True,
@@ -33,26 +35,29 @@ async def upload_policy_csv(file: UploadFile = File(...), current_user: Dict[str
         "metadata": result
     }
 
+
 @router.post("/claims", dependencies=[Depends(RoleChecker(["data_operator"]))])
 async def upload_claims_csv(file: UploadFile = File(...), current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Ingests and validates CSV containing claims data.
     """
-    if not (file.filename.endswith(".csv") or file.filename.endswith(".xlsx")):
+    if not file.filename.endswith(".csv"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file format. Please upload CSV or Excel files."
+            detail="Invalid file format. Please upload CSV files."
         )
         
     contents = await file.read()
-    content_str = contents.decode("utf-8")
-    
-    result = ingestion_svc.parse_and_validate_csv(
-        filename=file.filename,
-        content=content_str,
-        file_type="claims",
-        processed_by=current_user["id"]
-    )
+    try:
+        content_str = contents.decode("utf-8-sig")
+        result = ingestion_svc.parse_and_validate_csv(
+            filename=file.filename,
+            content=content_str,
+            file_type="claims",
+            processed_by=current_user["id"]
+        )
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
     
     return {
         "success": True,

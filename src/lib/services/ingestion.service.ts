@@ -18,34 +18,65 @@ export async function validateFile(
   rowCount?: string;
   errors?: string[];
 }> {
-  const formData = new FormData();
-  formData.append("file", file);
-
   try {
-    const url = type === "policy" ? "/api/v1/upload/policy" : "/api/v1/upload/claims";
-    const response = await apiRequest<{ success: boolean; metadata: { rows_detected: number } }>(url, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (response && response.success) {
-      return {
-        status: "success",
-        rowCount: response.metadata.rows_detected.toLocaleString(),
-      };
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      return { status: "error", errors: ["Invalid file format. Please upload a CSV file."] };
     }
+
+    const content = await file.text();
+    const [headerLine, ...dataLines] = content.trim().split(/\r?\n/);
+    const headers = splitCsvLine(headerLine);
+    const requiredHeaders = type === "policy"
+      ? ["Nomor Polis", "Plan Code", "Gender", "Tanggal Lahir", "Tanggal Efektif Polis", "Domisili"]
+      : [
+          "Claim ID",
+          "Nomor Polis",
+          "Reimburse/Cashless",
+          "Inpatient/Outpatient",
+          "ICD Diagnosis",
+          "ICD Description",
+          "Tanggal Pembayaran Klaim",
+          "Tanggal Pasien Masuk RS",
+          "Tanggal Pasien Keluar RS",
+          "Nominal Klaim Yang Disetujui",
+          "Nominal Biaya RS Yang Terjadi",
+          "Lokasi RS",
+        ];
+
+    const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header));
+    if (missingHeaders.length > 0) {
+      return { status: "error", errors: [`Missing required columns: ${missingHeaders.join(", ")}`] };
+    }
+
+    const rowCount = dataLines.filter((line) => line.trim().length > 0).length;
+    return { status: "success", rowCount: rowCount.toLocaleString() };
   } catch (err: any) {
-    console.error("[IngestionService] Validation upload failed:", err);
     return {
       status: "error",
-      errors: [err.message || "Failed to validate file against server schema."],
+      errors: [err.message || "Failed to validate file schema."],
     };
   }
+}
 
-  return {
-    status: "error",
-    errors: ["Unknown upload error. Connection failed."],
-  };
+function splitCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      values.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  values.push(current.trim());
+  return values;
 }
 
 /**
@@ -91,17 +122,24 @@ export async function ingestFile(
  * Run the AI Intelligence Engine on both uploaded datasets.
  */
 export async function runIntelligenceEngine(): Promise<{ success: boolean; jobId: string }> {
-  // Triggers predict async task
   try {
-    const payload = {
-      // Mock passing recent anomalous claim IDs to trigger prediction pipeline
-      claim_ids: [
-        "CLM-2026-08451",
-        "CLM-2026-08452",
-        "CLM-2026-08453",
-        "CLM-2026-08454"
-      ]
-    };
+    // 1. Fetch pending claims from backend
+    let claim_ids: string[] = [];
+    try {
+      const claimsRes = await apiGet<{ data: any[] }>("/api/v1/claims?status=pending&limit=50");
+      if (claimsRes && claimsRes.data && claimsRes.data.length > 0) {
+        claim_ids = claimsRes.data.map((c: any) => c.claim_id);
+      }
+    } catch (err) {
+      console.warn("[IngestionService] Failed to fetch pending claims:", err);
+    }
+
+    if (claim_ids.length === 0) {
+      console.error("[IngestionService] No claim records available in the database.");
+      return { success: false, jobId: `NO-CLAIMS-${Date.now()}` };
+    }
+
+    const payload = { claim_ids };
     const response = await apiPost<any, any>("/api/v1/predict", payload);
     return {
       success: true,

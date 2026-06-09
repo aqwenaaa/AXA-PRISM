@@ -15,6 +15,8 @@ interface RequestOptions extends RequestInit {
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { timeoutMs = 30000, requiresAuth = true, ...fetchOptions } = options;
+  const method = fetchOptions.method ?? "GET";
+  const fullUrl = `${API_BASE_URL}${path}`;
 
   // 1. Retrieve the active access token directly from the Supabase client
   let token: string | undefined = undefined;
@@ -45,16 +47,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const method = fetchOptions.method ?? "GET";
-  const fullUrl = `${API_BASE_URL}${path}`;
-
   try {
     const response = await fetch(fullUrl, {
       ...fetchOptions,
       headers,
       signal: controller.signal,
     });
-
     if (response.status === 401) {
       console.warn("[API Client] 401 Unauthorized — JWT token may be invalid or expired.");
     }

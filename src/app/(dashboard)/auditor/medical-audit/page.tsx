@@ -172,8 +172,11 @@ export default function MedicalAuditPage() {
             <Card className="p-4 bg-white rounded-xl border border-border">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-warning" />
-                Anomalous Claim Queue (EDAS Ranked)
+                Anomalous Claim Queue
               </h3>
+                <p className="text-sm text-muted-foreground">Risk Ranking using EDAS multi-criteria decision analysis</p>
+        
+              
               
               <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
                 {claimsData.length === 0 ? (

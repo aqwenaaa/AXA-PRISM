@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useMemo,
   useEffect,
+  useRef,
 } from "react";
 import { apiGet, apiPut, apiPost } from "../api/api-client";
 
@@ -94,8 +95,19 @@ export function NotificationProvider({
 }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [useFallback, setUseFallback] = useState(false);
+  const notificationsLengthRef = useRef(0);
+  const fetchNotificationsInFlightRef = useRef(false);
+
+  useEffect(() => {
+    notificationsLengthRef.current = notifications.length;
+  }, [notifications.length]);
 
   const fetchNotifications = useCallback(async () => {
+    if (fetchNotificationsInFlightRef.current) {
+      return;
+    }
+
+    fetchNotificationsInFlightRef.current = true;
     try {
       const res = await apiGet<any>("/api/v1/notifications");
       if (res && res.notifications) {
@@ -115,19 +127,21 @@ export function NotificationProvider({
         setUseFallback(false);
       } else {
         // Empty response or unmigrated DB setup
-        if (notifications.length === 0) {
+        if (notificationsLengthRef.current === 0) {
           setNotifications(FALLBACK_NOTIFICATIONS);
           setUseFallback(true);
         }
       }
     } catch (err) {
       console.warn("Failed to load notifications from API, using fallback memory state.", err);
-      if (notifications.length === 0) {
+      if (notificationsLengthRef.current === 0) {
         setNotifications(FALLBACK_NOTIFICATIONS);
         setUseFallback(true);
       }
+    } finally {
+      fetchNotificationsInFlightRef.current = false;
     }
-  }, [notifications.length]);
+  }, []);
 
   // Load and poll notifications
   useEffect(() => {

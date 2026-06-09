@@ -36,9 +36,15 @@ def trigger_prediction_pipeline(
         created_at=job["created_at"]
     )
 
+import time
+
 @router.get("/jobs")
 def get_recent_prediction_jobs(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Returns list of prediction runs to track progress dynamically.
     """
-    return ingestion_svc.job_repo.get_recent_jobs(limit=10)
+    start_time = time.perf_counter()
+    res = ingestion_svc.job_repo.get_recent_jobs(limit=10)
+    duration_ms = (time.perf_counter() - start_time) * 1000
+    print(f"[API Route GET /predict/jobs] duration_ms={duration_ms:.2f}ms")
+    return res

@@ -130,11 +130,13 @@ export async function getAIInsights(): Promise<AIInsight[]> {
  * Approve and submit strategic policy for implementation.
  */
 export async function approvePolicy(actionIds: number[]): Promise<void> {
-  try {
-    await apiPost<any, any>("/api/v1/predict", { claim_ids: [] });
-  } catch (err) {
-    console.warn("[AnalyticsService] Failed to call predict endpoint in approvePolicy:", err);
-  }
+  await Promise.all(
+    actionIds.map((actionId) =>
+      performRecommendationAction(String(actionId), "implement", {
+        notes: "Approved for policy implementation",
+      })
+    )
+  );
 }
 
 /**
@@ -160,4 +162,3 @@ export async function performRecommendationAction(
 ): Promise<void> {
   await apiPost<any, any>(`/api/v1/recommendations/${recId}/action`, { action, ...payload });
 }
-

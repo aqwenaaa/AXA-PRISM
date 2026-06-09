@@ -43,14 +43,48 @@ class ClaimRepository(BaseRepository):
         response = query.execute()
         return response.count or 0
 
+    def bulk_upsert(self, claims: List[Dict[str, Any]]) -> int:
+        if not claims:
+            return 0
+        written = 0
+        for idx in range(0, len(claims), 500):
+            batch = claims[idx:idx + 500]
+            response = self.client.table("claims").upsert(
+                batch,
+                on_conflict="claim_id"
+            ).execute()
+            written += len(response.data or batch)
+        return written
+
+    def existing_policy_numbers(self, policy_numbers: List[str]) -> set[str]:
+        if not policy_numbers:
+            return set()
+
+        found: set[str] = set()
+        unique_numbers = sorted({p for p in policy_numbers if p})
+        for idx in range(0, len(unique_numbers), 500):
+            chunk = unique_numbers[idx:idx + 500]
+            response = self.client.table("policies").select("policy_number").in_("policy_number", chunk).execute()
+            found.update(row["policy_number"] for row in (response.data or []) if row.get("policy_number"))
+        return found
+
     def submit_audit_log(self, claim_id: str, auditor_id: str, status: str, notes: str, retrain_flag: bool) -> Dict[str, Any]:
         """
         Inserts an audit verification record and updates the main claim status.
         """
         # Step 1: Update Claims status
         self.update(claim_id, {"status": status}, id_field="claim_id")
-        
-        # Step 2: Insert into Audit Logs (using audit_logs table or audit_feedback if table is named differently)
+
+        # Step 2: Store the human review state in claim_reviews.
+        review_payload = {
+            "claim_id": claim_id,
+            "reviewer_id": auditor_id,
+            "notes": notes,
+            "suggested_status": status
+        }
+        self.client.table("claim_reviews").upsert(review_payload, on_conflict="claim_id").execute()
+
+        # Step 3: Insert immutable audit outcome into audit_logs.
         audit_payload = {
             "claim_id": claim_id,
             "auditor_id": auditor_id,

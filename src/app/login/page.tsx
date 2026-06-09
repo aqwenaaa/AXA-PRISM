@@ -7,7 +7,7 @@ import { Lock, User, ArrowRight, Shield } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { supabase } from "@/lib/api/supabase-client";
+// import { supabase } from "@/lib/api/supabase-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,15 +30,15 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: username,
-      password,
-    });
+    // const { error } = await supabase.auth.signInWithPassword({
+    //   email: username,
+    //   password,
+    // });
 
-    if (error) {
-      setErrorMessage(error.message);
-      return;
-    }
+    // if (error) {
+    //   setErrorMessage(error.message);
+    //   return;
+    // }
 
     if (rememberMe) {
       localStorage.setItem("axa_prism_username", username);

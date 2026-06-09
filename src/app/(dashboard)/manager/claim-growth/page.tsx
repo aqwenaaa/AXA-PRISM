@@ -1,3 +1,4 @@
+
 "use client";
 
 import { TrendingUp, Sparkles, Calendar, HandCoinsIcon, AlertCircle, Activity, ArrowUpRight, Brain } from "lucide-react";

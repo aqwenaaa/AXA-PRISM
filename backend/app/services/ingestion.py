@@ -8,6 +8,8 @@ from app.repositories.prediction import PredictionJobRepository
 from app.repositories.claim import ClaimRepository
 from app.repositories.policy import PolicyRepository
 from app.repositories.settings import SystemSettingsRepository
+import pandas as pd
+
 
 class IngestionService:
     def __init__(self):
@@ -165,6 +167,7 @@ class IngestionService:
         """
         rows = self._read_csv_rows(content)
         header = list(rows[0].keys()) if rows else []
+        
 
         if file_type == "policy":
             records = self._map_policy_rows(rows)
@@ -200,6 +203,7 @@ class IngestionService:
             "rows_detected": records_written,
             "columns": header
         }
+        
 
     def _read_csv_rows(self, content: str) -> List[Dict[str, str]]:
         stream = io.StringIO(content.lstrip("\ufeff"))

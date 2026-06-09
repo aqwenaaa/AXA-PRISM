@@ -9,8 +9,10 @@ from app.api.v1.endpoints import (
     notifications,
     predict,
     upload,
-    settings as settings_endpoint
+    settings as settings_endpoint,
+    recommendations
 )
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -45,6 +47,8 @@ app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifica
 app.include_router(predict.router, prefix=f"{settings.API_V1_STR}/predict", tags=["Prediction"])
 app.include_router(upload.router, prefix=f"{settings.API_V1_STR}/upload", tags=["Upload"])
 app.include_router(settings_endpoint.router, prefix=f"{settings.API_V1_STR}/settings", tags=["Settings"])
+app.include_router(recommendations.router, prefix=f"{settings.API_V1_STR}/recommendations", tags=["Recommendations"])
+
 
 @app.get("/")
 def read_root():

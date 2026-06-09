@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Stethoscope, AlertTriangle, Clock, Building2, FileText, CheckCircle2, XCircle, AlertCircle, Zap } from "lucide-react";
+import { Stethoscope, AlertTriangle, Clock, Building2, FileText, CheckCircle2, XCircle, AlertCircle, Zap, Brain, HelpCircle } from "lucide-react";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
@@ -10,12 +10,28 @@ import { getAnomalyClaims, submitAuditDecision, triggerRetrain } from "@/lib/ser
 import type { ClaimRecord } from "@/lib/types";
 
 export default function MedicalAuditPage() {
+  const getConfidenceLabel = (claim: ClaimRecord | null) => {
+    if (!claim) return { text: "Low Confidence", color: "bg-rose-50 text-rose-700 border-rose-200" };
+    const finalScore = claim.finalRiskScore !== undefined ? claim.finalRiskScore : claim.anomalyScore;
+    const cf = claim.cfScore !== undefined ? claim.cfScore : 0;
+    const anomaly = claim.anomalyScore !== undefined ? claim.anomalyScore : 0;
+    const metric = (finalScore * 0.4) + (cf * 0.3) + (anomaly * 0.3);
+    
+    if (metric > 75) {
+      return { text: "High Confidence", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+    } else if (metric > 40) {
+      return { text: "Medium Confidence", color: "bg-amber-50 text-amber-700 border-amber-200" };
+    } else {
+      return { text: "Low Confidence", color: "bg-rose-50 text-rose-700 border-rose-200" };
+    }
+  };
+
   const [claimsData, setClaimsData] = useState<ClaimRecord[]>([]);
   const [selectedClaim, setSelectedClaim] = useState<ClaimRecord | null>(null);
   const [feedback, setFeedback] = useState("");
-  const [auditStatus, setAuditStatus] = useState<"valid" | "overtreatment" | "fraud" | null>(null);
+  const [auditStatus, setAuditStatus] = useState<"valid" | "overtreatment" | "fraud" | "requires_review" | null>(null);
   const [isRetraining, setIsRetraining] = useState(false);
-  const [feedbackCount, setFeedbackCount] = useState(12);
+  const [feedbackCount, setFeedbackCount] = useState(25);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load pending anomalous claims dynamically from FastAPI
@@ -23,9 +39,15 @@ export default function MedicalAuditPage() {
     setIsLoading(true);
     try {
       const claims = await getAnomalyClaims();
-      setClaimsData(claims);
-      if (claims.length > 0) {
-        setSelectedClaim(claims[0]);
+      // Sort claims by EDAS Rank (ascending) so the highest priority ranks appear first
+      const sortedClaims = [...claims].sort((a, b) => {
+        const rA = a.edasRank || 9999;
+        const rB = b.edasRank || 9999;
+        return rA - rB;
+      });
+      setClaimsData(sortedClaims);
+      if (sortedClaims.length > 0) {
+        setSelectedClaim(sortedClaims[0]);
       } else {
         setSelectedClaim(null);
       }
@@ -42,10 +64,11 @@ export default function MedicalAuditPage() {
 
   const handleSubmitFeedback = async () => {
     if (auditStatus && selectedClaim) {
-      const statusMap: Record<string, "valid" | "overtreatment" | "fraud"> = {
+      const statusMap: Record<string, "valid" | "overtreatment" | "fraud" | "requires_review"> = {
         "valid": "valid",
         "overtreatment": "overtreatment",
-        "fraud": "fraud"
+        "fraud": "fraud",
+        "requires_review": "requires_review"
       };
 
       try {
@@ -57,7 +80,7 @@ export default function MedicalAuditPage() {
           timestamp: new Date().toISOString()
         });
 
-        alert(`Claim ${selectedClaim.id} marked as: ${auditStatus.toUpperCase()}\nStatus synchronized in Supabase!`);
+        alert(`Claim ${selectedClaim.id} marked as: ${auditStatus.toUpperCase().replace('_', ' ')}\nDecision saved in database!`);
         
         // Clear forms and reload
         setFeedback("");
@@ -84,10 +107,18 @@ export default function MedicalAuditPage() {
     }
   };
 
+  const formatCurrency = (val: number) => {
+    if (val === undefined || val === null) return "Rp 0";
+    if (val > 10000) {
+      return `Rp ${val.toLocaleString()}`;
+    }
+    return `$${val.toLocaleString()}`;
+  };
+
   const claimHistory = [
-    { date: "2024-03-15", type: "Dental Checkup", cost: 150, status: "approved" },
-    { date: "2024-08-22", type: "General Consultation", cost: 80, status: "approved" },
-    { date: "2025-06-10", type: "Lab Tests", cost: 320, status: "approved" },
+    { date: "2024-03-15", type: "Dental Checkup", cost: 150000, status: "approved" },
+    { date: "2024-08-22", type: "General Consultation", cost: 80000, status: "approved" },
+    { date: "2025-06-10", type: "Lab Tests", cost: 320000, status: "approved" },
   ];
 
   return (
@@ -116,15 +147,15 @@ export default function MedicalAuditPage() {
         </Card>
         <Card className="p-4 bg-white rounded-xl border border-border">
           <p className="text-sm text-muted-foreground">Avg Anomaly Score</p>
-          <p className="text-2xl font-bold text-warning">95.4%</p>
+          <p className="text-2xl font-bold text-warning">91.2%</p>
         </Card>
         <Card className="p-4 bg-white rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Reviewed Today</p>
+          <p className="text-sm text-muted-foreground">Reviewed Decisions</p>
           <p className="text-2xl font-bold text-success">{feedbackCount}</p>
         </Card>
         <Card className="p-4 bg-white rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Fraud Detected</p>
-          <p className="text-2xl font-bold text-destructive">3</p>
+          <p className="text-sm text-muted-foreground">Fraud Flagged</p>
+          <p className="text-2xl font-bold text-destructive">5</p>
         </Card>
       </div>
 
@@ -141,17 +172,21 @@ export default function MedicalAuditPage() {
             <Card className="p-4 bg-white rounded-xl border border-border">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-warning" />
-                High Anomaly Claims
+                Anomalous Claim Queue (EDAS Ranked)
               </h3>
               
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
                 {claimsData.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-4 text-center">No pending reviews found in DB.</p>
                 ) : (
                   claimsData.map((claim) => (
                     <button
                       key={claim.id}
-                      onClick={() => setSelectedClaim(claim)}
+                      onClick={() => {
+                        setSelectedClaim(claim);
+                        setFeedback("");
+                        setAuditStatus(null);
+                      }}
                       className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
                         selectedClaim?.id === claim.id
                           ? 'border-primary bg-primary/5'
@@ -159,19 +194,24 @@ export default function MedicalAuditPage() {
                       }`}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="font-medium text-sm">{claim.id}</div>
-                          <div className="text-xs text-muted-foreground">{claim.patient}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-xs truncate flex items-center gap-1.5">
+                            <span className="bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded text-[10px]">
+                              #{claim.edasRank || "N/A"}
+                            </span>
+                            <span className="truncate">{claim.id.substring(0, 18)}...</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{claim.patient}</div>
                         </div>
-                        <Badge className="text-xs bg-destructive text-white">
-                          {claim.anomalyScore}%
+                        <Badge className={`text-xs ${claim.anomalyScore > 80 ? 'bg-destructive text-white' : 'bg-warning text-slate-800'}`}>
+                          {claim.anomalyScore}% Anomaly
                         </Badge>
                       </div>
                       
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{claim.diagnosis}</span>
-                        <span className="font-medium text-destructive">
-                          ${claim.actualCost.toLocaleString()}
+                        <span className="text-muted-foreground truncate max-w-[140px]">{claim.diagnosis}</span>
+                        <span className="font-semibold text-destructive">
+                          {formatCurrency(claim.actualCost)}
                         </span>
                       </div>
                     </button>
@@ -187,12 +227,22 @@ export default function MedicalAuditPage() {
               <Card className="p-6 bg-white rounded-xl border border-border mb-4">
                 <div className="flex items-start justify-between mb-6">
                   <div>
-                    <h3 className="text-xl font-semibold mb-1">{selectedClaim.id}</h3>
+                    <h3 className="text-xl font-semibold mb-1">Claim ID: {selectedClaim.id}</h3>
                     <p className="text-sm text-muted-foreground">Review claim details and submit audit decision</p>
                   </div>
-                  <Badge className="bg-destructive/10 text-destructive border-destructive/20">
-                    {selectedClaim.tier}
-                  </Badge>
+                  <div className="flex gap-2">
+                    {(() => {
+                      const conf = getConfidenceLabel(selectedClaim);
+                      return (
+                        <Badge className={`border font-semibold ${conf.color}`}>
+                          {conf.text}
+                        </Badge>
+                      );
+                    })()}
+                    <Badge className="bg-destructive/10 text-destructive border-destructive/20 font-bold">
+                      {selectedClaim.tier}
+                    </Badge>
+                  </div>
                 </div>
 
                 {/* Patient & Hospital Info */}
@@ -209,14 +259,16 @@ export default function MedicalAuditPage() {
                         <div>
                           <div className="font-medium">{selectedClaim.patient}</div>
                           <div className="text-xs text-muted-foreground">
-                            Member ID: {selectedClaim.id}
+                            Claim Code: {selectedClaim.id.substring(0, 8)}
                           </div>
                         </div>
                       </div>
                       
                       <div className="bg-secondary/50 p-3 rounded-lg">
-                        <div className="text-xs text-muted-foreground mb-1">Diagnosis</div>
-                        <div className="text-sm font-medium">{selectedClaim.diagnosis}</div>
+                        <div className="text-xs text-muted-foreground mb-1">Diagnosis (ICD-10 Code)</div>
+                        <div className="text-sm font-semibold text-indigo-950">
+                          {selectedClaim.diagnosis} ({selectedClaim.diagnosisCode})
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -235,7 +287,7 @@ export default function MedicalAuditPage() {
                       </div>
                       
                       <div className="bg-secondary/50 p-3 rounded-lg">
-                        <div className="text-xs text-muted-foreground mb-1">Service Date</div>
+                        <div className="text-xs text-muted-foreground mb-1">Admission & Discharge Date</div>
                         <div className="text-sm font-medium">{selectedClaim.date}</div>
                       </div>
                     </div>
@@ -246,26 +298,66 @@ export default function MedicalAuditPage() {
                 <div className="bg-gradient-to-br from-red-50 to-pink-50 p-4 rounded-xl border border-red-100 mb-6">
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">Expected Cost</div>
-                      <div className="text-xl font-bold text-foreground">${selectedClaim.expectedCost.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground mb-1">Expected Cost (AI Baseline)</div>
+                      <div className="text-lg font-bold text-foreground">{formatCurrency(selectedClaim.expectedCost)}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">Actual Cost</div>
-                      <div className="text-xl font-bold text-destructive">${selectedClaim.actualCost.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground mb-1">Actual Claim Cost</div>
+                      <div className="text-lg font-bold text-destructive">{formatCurrency(selectedClaim.actualCost)}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">Variance</div>
-                      <div className="text-xl font-bold text-destructive">
-                        +{(((selectedClaim.actualCost - selectedClaim.expectedCost) / selectedClaim.expectedCost) * 100).toFixed(0)}%
+                      <div className="text-xs text-muted-foreground mb-1">Discrepancy Variance</div>
+                      <div className="text-lg font-bold text-destructive">
+                        +{(((selectedClaim.actualCost - selectedClaim.expectedCost) / Math.max(1, selectedClaim.expectedCost)) * 100).toFixed(0)}%
                       </div>
                     </div>
                   </div>
                   
                   <div className="mt-3 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
-                    <span className="text-sm text-destructive font-medium">
-                      Cost variance exceeds {selectedClaim.anomalyScore}% confidence threshold
+                    <AlertTriangle className="w-4 h-4 text-destructive animate-pulse" />
+                    <span className="text-xs text-destructive font-semibold">
+                      Claim cost variance exceeds dynamic confidence threshold by {(selectedClaim.actualCost - selectedClaim.expectedCost) > 0 ? formatCurrency(selectedClaim.actualCost - selectedClaim.expectedCost) : "0"}
                     </span>
+                  </div>
+                </div>
+
+                {/* 3. ML Explanation Panel (Evidence & Details) */}
+                <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl mb-6">
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-slate-800">
+                    <Brain className="w-4 h-4 text-primary" />
+                    Decision Support Explanations
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">Anomaly Score</div>
+                      <div className="text-lg font-bold text-destructive mt-0.5">{selectedClaim.anomalyScore}%</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">Isolation Forest score</div>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">Expected Cost</div>
+                      <div className="text-lg font-bold text-foreground mt-0.5">{formatCurrency(selectedClaim.expectedCost)}</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">RF Regressor baseline</div>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">Residual Variance</div>
+                      <div className="text-lg font-bold text-destructive mt-0.5">{formatCurrency(selectedClaim.residual || 0)}</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">Actual vs Expected cost</div>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">Certainty Factor</div>
+                      <div className="text-lg font-bold text-primary mt-0.5">{selectedClaim.cfScore || 0}%</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">MYCIN engine fusion</div>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">Final Risk Score</div>
+                      <div className="text-lg font-bold text-primary mt-0.5">{selectedClaim.finalRiskScore || 0}%</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">CF weights calibration</div>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">EDAS priority rank</div>
+                      <div className="text-lg font-bold text-indigo-600 mt-0.5">Rank #{selectedClaim.edasRank || "N/A"}</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">Multi-criteria DSS priority</div>
+                    </div>
                   </div>
                 </div>
 
@@ -284,7 +376,7 @@ export default function MedicalAuditPage() {
                           <div className="text-xs text-muted-foreground">{item.date}</div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-medium">${item.cost}</span>
+                          <span className="text-sm font-medium">{formatCurrency(item.cost)}</span>
                           <Badge className="bg-success/10 text-success border-success/20 text-xs">
                             Approved
                           </Badge>
@@ -298,60 +390,76 @@ export default function MedicalAuditPage() {
                 <div className="border-t border-border pt-6">
                   <h4 className="font-semibold mb-4">Audit Decision</h4>
                   
-                  <div className="grid grid-cols-3 gap-3 mb-4">
+                  {/* 1. Decision choices (Valid, Overtreatment, Fraud, Requires Review) */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                     <button
                       onClick={() => setAuditStatus("valid")}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center ${
                         auditStatus === "valid"
-                          ? 'border-success bg-success/10'
+                          ? 'border-success bg-success/5 shadow-md shadow-success/10'
                           : 'border-border hover:border-success/50 bg-white'
                       }`}
                     >
-                      <CheckCircle2 className={`w-8 h-8 mx-auto mb-2 ${
+                      <CheckCircle2 className={`w-6 h-6 mb-2 ${
                         auditStatus === "valid" ? 'text-success' : 'text-muted-foreground'
                       }`} />
-                      <div className="text-sm font-medium">Valid</div>
-                      <div className="text-xs text-muted-foreground">Legitimate claim</div>
+                      <div className="text-sm font-semibold">Valid</div>
+                      <div className="text-[10px] text-muted-foreground">Legitimate claim</div>
                     </button>
 
                     <button
                       onClick={() => setAuditStatus("overtreatment")}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center ${
                         auditStatus === "overtreatment"
-                          ? 'border-warning bg-warning/10'
+                          ? 'border-warning bg-warning/5 shadow-md shadow-warning/10'
                           : 'border-border hover:border-warning/50 bg-white'
                       }`}
                     >
-                      <AlertCircle className={`w-8 h-8 mx-auto mb-2 ${
+                      <AlertCircle className={`w-6 h-6 mb-2 ${
                         auditStatus === "overtreatment" ? 'text-warning' : 'text-muted-foreground'
                       }`} />
-                      <div className="text-sm font-medium">Over-treatment</div>
-                      <div className="text-xs text-muted-foreground">Excessive care</div>
+                      <div className="text-sm font-semibold">Over-treatment</div>
+                      <div className="text-[10px] text-muted-foreground">Excessive care</div>
                     </button>
 
                     <button
                       onClick={() => setAuditStatus("fraud")}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center ${
                         auditStatus === "fraud"
-                          ? 'border-destructive bg-destructive/10'
+                          ? 'border-destructive bg-destructive/5 shadow-md shadow-destructive/10'
                           : 'border-border hover:border-destructive/50 bg-white'
                       }`}
                     >
-                      <XCircle className={`w-8 h-8 mx-auto mb-2 ${
+                      <XCircle className={`w-6 h-6 mb-2 ${
                         auditStatus === "fraud" ? 'text-destructive' : 'text-muted-foreground'
                       }`} />
-                      <div className="text-sm font-medium">Fraud</div>
-                      <div className="text-xs text-muted-foreground">Fraudulent claim</div>
+                      <div className="text-sm font-semibold">Fraud</div>
+                      <div className="text-[10px] text-muted-foreground">Deceptive billing</div>
+                    </button>
+
+                    <button
+                      onClick={() => setAuditStatus("requires_review")}
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center text-center ${
+                        auditStatus === "requires_review"
+                          ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
+                          : 'border-border hover:border-primary/50 bg-white'
+                      }`}
+                    >
+                      <HelpCircle className={`w-6 h-6 mb-2 ${
+                        auditStatus === "requires_review" ? 'text-primary' : 'text-muted-foreground'
+                      }`} />
+                      <div className="text-sm font-semibold">Requires Review</div>
+                      <div className="text-[10px] text-muted-foreground">Needs escalation</div>
                     </button>
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm mb-2">Additional Notes (Optional)</label>
+                    <label className="block text-sm mb-2 font-medium">Auditor Justification Notes (Optional)</label>
                     <Textarea
                       value={feedback}
                       onChange={(e) => setFeedback(e.target.value)}
-                      placeholder="Enter your audit notes, medical justification, or concerns..."
-                      className="min-h-24 bg-input-background rounded-xl"
+                      placeholder="Enter clinical reasons, audit justifications, or notes for secondary review..."
+                      className="min-h-24 bg-slate-50 border border-slate-200 rounded-xl"
                     />
                   </div>
 
@@ -371,14 +479,14 @@ export default function MedicalAuditPage() {
                         setFeedback("");
                       }}
                     >
-                      Reset
+                      Reset Form
                     </Button>
                   </div>
                 </div>
               </Card>
             ) : (
               <Card className="p-12 text-center bg-white border border-border rounded-xl">
-                <p className="text-muted-foreground">Please select a claim from the anomaly list to audit.</p>
+                <p className="text-muted-foreground">Please select a claim from the list to audit.</p>
               </Card>
             )}
           </div>
@@ -393,19 +501,19 @@ export default function MedicalAuditPage() {
               <Zap className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-1">Human-in-the-Loop AI Retraining</h3>
+              <h3 className="text-xl font-semibold mb-1">Human-in-the-Loop AI Feedback</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Retrain the anomaly detection model with your expert feedback to improve accuracy and reduce false positives
+                Decisions collected from audits act as future training labels, improving regressor accuracy and reducing future anomalies.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Badge className="bg-white border-primary/30">
-                  {feedbackCount} Audit Decisions Collected
+                  {feedbackCount} Audit Decisions Saved
                 </Badge>
                 <Badge className="bg-white border-primary/30">
                   Current Model: v2.4.3
                 </Badge>
                 <Badge className="bg-white border-primary/30">
-                  Last Retrained: 2026-04-25
+                  Status: Ready for retrain loop
                 </Badge>
               </div>
             </div>
@@ -424,7 +532,7 @@ export default function MedicalAuditPage() {
             ) : (
               <>
                 <Zap className="w-5 h-5 mr-2" />
-                Retrain AI Model
+                Trigger AI Retrain
               </>
             )}
           </Button>

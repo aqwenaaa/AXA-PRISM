@@ -14,7 +14,7 @@ class BaseRepository(Generic[T]):
         self.client = supabase_admin
 
     def get_by_id(self, item_id: Any, id_field: str = "id") -> Optional[Dict[str, Any]]:
-        response = self.client.table(self.table_name).select("*").eq(id_field, item_id).maybeSingle().execute()
+        response = self.client.table(self.table_name).select("*").eq(id_field, item_id).maybe_single().execute()
         return response.data
 
     def list_all(self, limit: int = 100) -> List[Dict[str, Any]]:

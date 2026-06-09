@@ -19,18 +19,25 @@ class UserProfile(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-# Claims Schemas (Includes final_risk_score and recommended_action)
+# Claims Schemas - Aligned with actual active database columns (policy_number, approved_claim_cost, icd_diagnosis)
 class ClaimRecord(BaseModel):
     claim_id: str
-    policy_id: Optional[str] = None
-    hospital_name: str
-    diagnosis_code: str
-    actual_claim_cost: float
+    policy_number: str
+    claim_type: str
+    patient_type: str
+    icd_diagnosis: str
+    icd_description: str
+    payment_date: str
+    admission_date: str
+    discharge_date: str
+    approved_claim_cost: float
+    hospital_cost: float
+    hospital_location: str
     status: str
     uploaded_by: Optional[str] = None
     created_at: datetime
     
-    # ML Outcomes (CTO Revisions 3 & 4)
+    # ML Outcomes (CTO Revisions 3 & 4 mapped dynamically)
     expected_claim_cost: Optional[float] = None
     residual: Optional[float] = None
     anomaly_score: Optional[float] = None
@@ -45,16 +52,14 @@ class ClaimAuditSubmit(BaseModel):
     auditor_notes: Optional[str] = None
     retrain_ai_flag: Optional[bool] = False
 
-# Policies Schemas
+# Policies Schemas - Aligned with actual active database columns (gender, birth_date, domicile)
 class PolicyRecord(BaseModel):
-    policy_id: str
-    patient_id: str
-    age: int
-    sex: str
-    bmi: float
-    children: int
-    smoker: bool
-    region: str
+    policy_number: str
+    plan_code: str
+    gender: str
+    birth_date: str
+    effective_date: str
+    domicile: str
     created_at: datetime
 
 # Ingestion & Ingestion Log Schemas
@@ -103,6 +108,9 @@ class CFWeights(BaseModel):
 class SystemSettingsSchema(BaseModel):
     cf_weights: CFWeights
     anomaly_threshold: int = Field(default=85, ge=50, le=100)
+    updated_by_name: Optional[str] = "System Default"
+    updated_at_str: Optional[str] = None
+
 
 # Dashboard Response Schemas
 class AdminDashboardResponse(BaseModel):
@@ -125,6 +133,8 @@ class AnalystDashboardResponse(BaseModel):
     risk_clusters: int
     scatter_data: List[Dict[str, Any]]
     feature_importance: List[Dict[str, Any]]
+    claims_sample: Optional[List[Dict[str, Any]]] = None
+
 
 class AuditorDashboardResponse(BaseModel):
     pending_reviews: int
@@ -139,3 +149,5 @@ class ManagerDashboardResponse(BaseModel):
     model_confidence: float
     risk_tier_distribution: List[Dict[str, Any]]
     strategic_actions: List[Dict[str, Any]]
+    monthly_growth: Optional[List[Dict[str, Any]]] = None
+    category_growth: Optional[List[Dict[str, Any]]] = None

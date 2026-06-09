@@ -40,7 +40,7 @@ export async function getFinancialTrend(): Promise<FinancialTrend[]> {
     { month: "Jan", baseline: 1600, predicted: 1450, savings: 150 },
     { month: "Feb", baseline: 1800, predicted: 1600, savings: 200 },
     { month: "Mar", baseline: 2000, predicted: 1750, savings: 250 },
-    { month: "Apr", baseline: 2100, baseline: 2100, predicted: 1800, savings: 300 },
+    { month: "Apr", baseline: 2100, predicted: 1800, savings: 300 },
   ];
 }
 
@@ -130,10 +130,34 @@ export async function getAIInsights(): Promise<AIInsight[]> {
  * Approve and submit strategic policy for implementation.
  */
 export async function approvePolicy(actionIds: number[]): Promise<void> {
-  // Invokes a POST callback validation inside FastAPI (simulate validation flow)
   try {
     await apiPost<any, any>("/api/v1/predict", { claim_ids: [] });
   } catch (err) {
     console.warn("[AnalyticsService] Failed to call predict endpoint in approvePolicy:", err);
   }
 }
+
+/**
+ * Fetch all strategic recommendations from database.
+ */
+export async function getRecommendationsList(): Promise<any[]> {
+  try {
+    const response = await apiGet<any[]>("/api/v1/recommendations");
+    return response || [];
+  } catch (err) {
+    console.error("[AnalyticsService] Failed to load recommendations:", err);
+    return [];
+  }
+}
+
+/**
+ * Perform manager action on strategic recommendation.
+ */
+export async function performRecommendationAction(
+  recId: string,
+  action: string,
+  payload: { priority?: string; title?: string; description?: string; reasoning?: string; notes?: string }
+): Promise<void> {
+  await apiPost<any, any>(`/api/v1/recommendations/${recId}/action`, { action, ...payload });
+}
+

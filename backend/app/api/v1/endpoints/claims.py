@@ -60,8 +60,30 @@ def submit_audit_decision(payload: ClaimAuditSubmit, current_user: Dict[str, Any
         retrain_flag=payload.retrain_ai_flag or False
     )
     
+    # Trigger notification
+    try:
+        from app.services.notification_service import notification_service
+        severity_map = {
+            "valid": "success",
+            "requires_review": "warning",
+            "over_treatment": "warning",
+            "fraud": "error"
+        }
+        status_label = payload.status.upper().replace('_', ' ')
+        notification_service.create_notification(
+            type_str="audit_submitted",
+            severity=severity_map.get(payload.status, "info"),
+            title=f"Claim Audited: {status_label}",
+            message=f"Claim {payload.claim_id[:8]}... was audited as {payload.status.replace('_', ' ')}.",
+            recipient_role="strategic_manager",
+            action_url="/manager/executive-dashboard"
+        )
+    except Exception as e:
+        print(f"Failed to issue audit notification: {e}")
+        
     return {
         "success": True,
         "detail": "Audit decision successfully recorded.",
         "record": audit_log
     }
+

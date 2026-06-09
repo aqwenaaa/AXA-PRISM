@@ -5,12 +5,14 @@ from datetime import datetime
 from app.repositories.prediction import PredictionJobRepository
 from app.repositories.claim import ClaimRepository
 from app.repositories.policy import PolicyRepository
+from app.repositories.settings import SystemSettingsRepository
 
 class IngestionService:
     def __init__(self):
         self.job_repo = PredictionJobRepository()
         self.claim_repo = ClaimRepository()
         self.policy_repo = PolicyRepository()
+        self.settings_repo = SystemSettingsRepository()
 
     def create_async_job(self, claim_ids: List[str], triggered_by: str) -> Dict[str, Any]:
         """
@@ -26,6 +28,7 @@ class IngestionService:
             "anomaly_detected": 0,
             "task_id": f"task_{job_id.split('-')[0]}",
             "triggered_by": triggered_by,
+            "workflow_stage": "queued",
             "created_at": datetime.now().isoformat()
         }
         
@@ -37,44 +40,57 @@ class IngestionService:
         """
         try:
             # 1. Transition status to processing
-            self.job_repo.update(job_id, {"status": "processing"}, id_field="job_id")
+            self.job_repo.update(job_id, {"status": "processing", "workflow_stage": "processing"}, id_field="job_id")
+            
+            # 1.1 Load calibration settings from system_settings
+            age_w, bmi_w, smoker_w = 0.2, 0.3, 0.5
+            anomaly_threshold = 85
+            try:
+                weights_rec = self.settings_repo.get_by_key("cf_weights")
+                threshold_rec = self.settings_repo.get_by_key("anomaly_threshold")
+                if weights_rec and "setting_value" in weights_rec:
+                    val = weights_rec["setting_value"]
+                    age_w = float(val.get("age_weight", 0.2))
+                    bmi_w = float(val.get("bmi_weight", 0.3))
+                    smoker_w = float(val.get("smoker_weight", 0.5))
+                if threshold_rec and "setting_value" in threshold_rec:
+                    anomaly_threshold = int(threshold_rec["setting_value"].get("threshold", 85))
+                
+                # Update stage to calibration_applied
+                self.job_repo.update(job_id, {"workflow_stage": "calibration_applied"}, id_field="job_id")
+            except Exception as e:
+                print(f"Error loading calibration settings: {e}")
+            
+            # Instantiate MLService & run inference
+            from app.services.ml_service import MLService
+            ml_svc = MLService()
+            
+            processed_results = ml_svc.execute_inference_batch(
+                claim_ids=claim_ids,
+                age_weight=age_w,
+                bmi_weight=bmi_w,
+                smoker_weight=smoker_w,
+                anomaly_threshold=anomaly_threshold
+            )
             
             total_records = len(claim_ids)
             processed = 0
             anomalies = 0
             
-            # Process in chunks of 1 to simulate work
-            for cid in claim_ids:
-                await asyncio.sleep(1.0) # Simulate latency
+            # Upsert results and increment progress log
+            for record in processed_results:
+                await asyncio.sleep(0.5) # Simulate small progress delay for UI feel
                 processed += 1
                 
-                # Simple deterministic anomaly logic: claims over $5,000 are anomalies
-                claim = self.claim_repo.get_by_id(cid, id_field="claim_id")
-                is_anomaly = False
-                if claim:
-                    cost = float(claim.get("actual_claim_cost", 0.0))
-                    if cost > 5000.0:
-                        is_anomaly = True
-                        anomalies += 1
-                
-                # Check if processed claim detail exists, if not, create it
-                if claim:
-                    ml_data = {
-                        "claim_id": cid,
-                        "expected_claim_cost": cost * 0.4 if not is_anomaly else cost * 0.28,
-                        "residual": cost * 0.6 if not is_anomaly else cost * 0.72,
-                        "anomaly_score": 0.12 if not is_anomaly else 0.94,
-                        "risk_cluster": 1 if not is_anomaly else 4,
-                        "cf_score": 0.85 if not is_anomaly else 0.98,
-                        "final_risk_score": 0.12 if not is_anomaly else 0.985, # CTO Revision 3
-                        "recommended_action": "approve" if not is_anomaly else "audit_claim" # CTO Revision 4
-                    }
-                    try:
-                        self.claim_repo.client.table("processed_claims").upsert(ml_data, on_conflict="claim_id").execute()
-                    except Exception as e:
-                        print(f"Error upserting processed claim ML parameters: {e}")
-
-                # Update incremental progress
+                if record.get("recommended_action") == "audit_claim":
+                    anomalies += 1
+                    
+                try:
+                    self.claim_repo.client.table("processed_claims").upsert(record, on_conflict="claim_id").execute()
+                except Exception as e:
+                    print(f"Error upserting processed claim: {e}")
+                    
+                # Update progress tracking
                 self.job_repo.update(job_id, {
                     "records_processed": processed,
                     "anomaly_detected": anomalies
@@ -83,16 +99,46 @@ class IngestionService:
             # 2. Finish up job successfully
             self.job_repo.update(job_id, {
                 "status": "completed",
+                "workflow_stage": "completed",
                 "completed_at": datetime.now().isoformat()
             }, id_field="job_id")
+            
+            # Trigger notification
+            try:
+                from app.services.notification_service import notification_service
+                notification_service.create_notification(
+                    type_str="engine_completed",
+                    severity="success",
+                    title="Intelligence Engine Inference Completed",
+                    message=f"Analytical execution completed successfully. Processed {processed} records, detected {anomalies} anomalies.",
+                    recipient_role="risk_analyst",
+                    action_url="/analyst/intelligence-lab"
+                )
+            except Exception as e:
+                print(f"Failed to issue engine completed notification: {e}")
             
         except Exception as err:
             # Catch errors, flag prediction job as failed
             self.job_repo.update(job_id, {
                 "status": "failed",
+                "workflow_stage": "failed",
                 "error_message": str(err),
                 "completed_at": datetime.now().isoformat()
             }, id_field="job_id")
+            
+            # Trigger notification
+            try:
+                from app.services.notification_service import notification_service
+                notification_service.create_notification(
+                    type_str="engine_failed",
+                    severity="error",
+                    title="Intelligence Engine Inference Failed",
+                    message=f"Engine prediction pipeline run failed: {str(err)[:100]}.",
+                    recipient_role="risk_analyst",
+                    action_url="/analyst/intelligence-lab"
+                )
+            except Exception as e:
+                print(f"Failed to issue engine failed notification: {e}")
 
     def parse_and_validate_csv(self, filename: str, content: str, file_type: str, processed_by: str) -> Dict[str, Any]:
         """

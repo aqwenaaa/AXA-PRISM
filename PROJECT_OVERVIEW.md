@@ -1,7 +1,15 @@
-# Insurance Claim Analysis Platform - ClaimIQ
+# AXA-PRIS M
 
 ## Overview
-A high-end, enterprise-grade Insurance Claim Analysis Platform with AI-powered analytics, built with React, TypeScript, and Tailwind CSS.
+A high-end, enterprise-grade Insurance Claim Analysis Platform with AI-powered analytics, built with Next.Js, Framer Motion, and Postgres Database.
+
+## Features
+- Enterprise-grade UI/UX
+- Role-based access control simulation
+- Interactive data visualizations
+- AI-powered analytics
+- Glassmorphism design
+- Responsive layouts  
 
 ## Design System
 

@@ -163,7 +163,7 @@ export async function getScatterData(): Promise<ScatterPoint[]> {
 }
 
 /**
- * Get K-Means cluster map data.
+ * Get cluster map data.
  */
 export async function getClusterData(): Promise<ClusterPoint[]> {
   return [

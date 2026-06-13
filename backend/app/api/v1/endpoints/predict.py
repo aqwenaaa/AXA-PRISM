@@ -45,6 +45,6 @@ def get_recent_prediction_jobs(current_user: Dict[str, Any] = Depends(get_curren
     """
     start_time = time.perf_counter()
     res = ingestion_svc.job_repo.get_recent_jobs(limit=10)
-    duration_ms = (time.perf_counter() - start_time) * 1000
+    duration_ms = (time.perf_counter() - start_time) * 100000
     print(f"[API Route GET /predict/jobs] duration_ms={duration_ms:.2f}ms")
     return res

@@ -54,7 +54,7 @@ type ModelCategory =
   | "clustering"
   | "regression"
   | "classification"
-  | "prediction";
+  | "nlp";
 
 // Roles that can use custom models — Admin is EXCLUDED by design
 const ASSIGNABLE_ROLES: UserRole[] = [
@@ -116,9 +116,9 @@ const MOCK_MODELS: ModelEndpoint[] = [
   },
   {
     id: "mdl-002",
-    name: "Claim Risk Clustering",
+    name: "Claim Risk Segmentation",
     description:
-      "K-Means clustering to segment claims into risk tiers based on hospital tier, diagnosis code, and cost deviation.",
+      "Random Forest Regression Model to segment claims into risk tiers based on hospital tier, diagnosis code, and cost deviation.",
     category: "clustering",
     endpoint: "http://fastapi.axa-prism.internal/api/v1/cluster",
     version: "1.8.0",
@@ -129,7 +129,7 @@ const MOCK_MODELS: ModelEndpoint[] = [
     accuracy: 91.2,
     createdAt: "2026-03-20",
     apiKey: "sk-prod-axaprism-clus-****",
-    tags: ["production", "k-means", "segmentation"],
+    tags: ["production", "random_forest", "clustering", "segmentation"],
   },
   {
     id: "mdl-003",
@@ -147,6 +147,23 @@ const MOCK_MODELS: ModelEndpoint[] = [
     createdAt: "2026-02-10",
     apiKey: "sk-prod-axaprism-regr-****",
     tags: ["staging", "regression", "cost-prediction"],
+  },
+  {
+    id: "mdl-004",
+    name: "Diagnosis Code NLP",
+    description:
+      "BERT-based NLP classifier for validating ICD-10 diagnosis codes against clinical narrative descriptions.",
+    category: "nlp",
+    endpoint: "http://fastapi.axa-prism.internal/api/v1/nlp/icd-validate",
+    version: "1.0.0-beta",
+    status: "testing",
+    assignedRoles: ["medical_auditor"],
+    lastTested: "2026-05-06 11:00:00",
+    latencyMs: 350,
+    accuracy: 88.1,
+    createdAt: "2026-05-01",
+    apiKey: "sk-dev-axaprism-nlp-****",
+    tags: ["beta", "nlp", "bert", "icd-10"],
   },
 ];
 
@@ -185,7 +202,7 @@ const CATEGORY_CONFIG: Record<
     color: "#2563EB",
     bg: "rgba(37,99,235,0.1)",
   },
-  prediction: { label: "Prediction", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  nlp: { label: "NLP", color: "#4338CA", bg: "rgba(67,56,202,0.1)" },
 };
 
 const STATUS_CONFIG: Record<
@@ -1276,7 +1293,7 @@ export default function ModelDebugPage() {
               },
               {
                 endpoint: "POST /api/v1/cluster",
-                desc: "K-Means clustering — groups claims by risk tier and pattern",
+                desc: "Random Forest Regression Model — groups claims by risk tier and pattern",
                 badge: "Strategic Manager",
                 color: "#8A70D6",
               },

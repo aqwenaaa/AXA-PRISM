@@ -14,9 +14,18 @@ interface RequestOptions extends RequestInit {
  * Automatically reads the client session to inject the active Supabase Auth JWT.
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { timeoutMs = 30000, requiresAuth = true, ...fetchOptions } = options;
+  const { timeoutMs, requiresAuth = true, ...fetchOptions } = options;
   const method = fetchOptions.method ?? "GET";
   const fullUrl = `${API_BASE_URL}${path}`;
+  const isUploadRequest = method === "POST" && path.startsWith("/api/v1/upload/");
+  if (isUploadRequest) {
+    console.log("UPLOAD_TRIGGER_SOURCE", {
+      source: "apiRequest",
+      method,
+      path,
+      fullUrl,
+    });
+  }
 
   // 1. Retrieve the active access token directly from the Supabase client
   let token: string | undefined = undefined;
@@ -45,7 +54,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   // 4. Handle timeout controls
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = timeoutMs && timeoutMs > 0
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : undefined;
 
   try {
     const response = await fetch(fullUrl, {
@@ -64,7 +75,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
     return (await response.json()) as T;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 

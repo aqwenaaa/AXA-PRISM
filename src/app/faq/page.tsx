@@ -47,7 +47,7 @@ const faqs = [
     questions: [
       {
         q: 'What is the fraud detection accuracy?',
-        a: 'Our AI models achieve 99.9% accuracy in detecting fraudulent claims using advanced machine learning algorithms including K-Means clustering, regression analysis, and pattern recognition.'
+        a: 'Our AI models achieve 99.9% accuracy in detecting fraudulent claims using advanced machine learning algorithms including regression analysis, and pattern recognition.'
       },
       {
         q: 'How fast are claims processed?',

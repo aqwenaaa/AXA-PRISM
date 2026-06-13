@@ -131,7 +131,7 @@ export default function MedicalAuditPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">Medical Audit Worklist</h1>
-            <p className="text-muted-foreground">Human-in-the-loop verification and validation</p>
+            <p className="text-muted-foreground">Auditor verification and validation</p>
           </div>
         </div>
         <Badge className="bg-primary/10 text-primary border-primary/20">
@@ -191,7 +191,7 @@ export default function MedicalAuditPage() {
                         setAuditStatus(null);
                       }}
                       className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
-                        selectedClaim?.id === claim.id
+                        selectedClaim && selectedClaim.id.substring(0, 8) === claim.id.substring(0, 8)
                           ? 'border-primary bg-primary/5'
                           : 'border-border hover:border-primary/50 bg-white'
                       }`}
@@ -256,13 +256,12 @@ export default function MedicalAuditPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-sm font-semibold text-primary">
-                            {selectedClaim.patient.split(' ').map(n => n[0]).join('')}
                           </span>
                         </div>
                         <div>
-                          <div className="font-medium">{selectedClaim.patient}</div>
+                          <div className="font-medium">{selectedClaim.id.substring(0, 8)}</div>
                           <div className="text-xs text-muted-foreground">
-                            Claim Code: {selectedClaim.id.substring(0, 8)}
+              
                           </div>
                         </div>
                       </div>
@@ -351,18 +350,9 @@ export default function MedicalAuditPage() {
                       <div className="text-lg font-bold text-primary mt-0.5">{selectedClaim.cfScore || 0}%</div>
                       <div className="text-[9px] text-muted-foreground mt-0.5">MYCIN engine fusion</div>
                     </div>
-                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">Final Risk Score</div>
-                      <div className="text-lg font-bold text-primary mt-0.5">{selectedClaim.finalRiskScore || 0}%</div>
-                      <div className="text-[9px] text-muted-foreground mt-0.5">CF weights calibration</div>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">EDAS priority rank</div>
-                      <div className="text-lg font-bold text-indigo-600 mt-0.5">Rank #{selectedClaim.edasRank || "N/A"}</div>
-                      <div className="text-[9px] text-muted-foreground mt-0.5">Multi-criteria DSS priority</div>
+
                     </div>
                   </div>
-                </div>
 
                 {/* Claim History */}
                 <div className="mb-6">
@@ -496,51 +486,6 @@ export default function MedicalAuditPage() {
         </div>
       )}
 
-      {/* AI Retraining Section */}
-      <Card className="p-8 bg-gradient-to-br from-primary/5 via-purple-50 to-indigo-50 rounded-xl border-2 border-primary/30 mt-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-xl">
-              <Zap className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-1">Human-in-the-Loop AI Feedback</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Decisions collected from audits act as future training labels, improving regressor accuracy and reducing future anomalies.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Badge className="bg-white border-primary/30">
-                  {feedbackCount} Audit Decisions Saved
-                </Badge>
-                <Badge className="bg-white border-primary/30">
-                  Current Model: v2.4.3
-                </Badge>
-                <Badge className="bg-white border-primary/30">
-                  Status: Ready for retrain loop
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleRetrainAI}
-            disabled={isRetraining || feedbackCount < 10}
-            className="bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary text-white px-8 h-14 rounded-xl shadow-xl shadow-primary/30 transition-all whitespace-nowrap disabled:opacity-50"
-          >
-            {isRetraining ? (
-              <>
-                <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2" />
-                Retraining Model...
-              </>
-            ) : (
-              <>
-                <Zap className="w-5 h-5 mr-2" />
-                Trigger AI Retrain
-              </>
-            )}
-          </Button>
-        </div>
-      </Card>
     </div>
   );
 }

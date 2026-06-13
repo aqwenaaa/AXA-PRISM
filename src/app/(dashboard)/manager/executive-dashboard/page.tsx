@@ -410,7 +410,7 @@ export default function ExecutiveDashboardPage() {
                         <div className="flex items-center gap-2">
                           <h4 className="font-bold text-lg text-foreground">{action.title}</h4>
                           <Badge className="bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
-                            EDAS Rank #{action.edas_rank || "N/A"}
+                            EDAS Rank #{action.edas_rank}
                           </Badge>
                           <Badge className={`text-xs font-semibold ${getPriorityStyle(action.priority)}`}>
                             {action.priority} Priority

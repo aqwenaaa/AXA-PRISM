@@ -25,6 +25,7 @@ export default function DataIngestionPage() {
   const [validationStatus, setValidationStatus] = useState<"idle" | "validating" | "success" | "error">("idle");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [detectedRowCount, setDetectedRowCount] = useState("0");
+  const [isUploading, setIsUploading] = useState(false);
 
   const [qualityReport, setQualityReport] = useState({
     totalRows: "0",
@@ -34,6 +35,7 @@ export default function DataIngestionPage() {
 
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
   const fetchJobsInFlightRef = useRef(false);
+  const uploadInFlightRef = useRef(false);
 
   const fetchJobs = async () => {
     if (fetchJobsInFlightRef.current) {
@@ -111,6 +113,12 @@ export default function DataIngestionPage() {
   };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("UPLOAD_TRIGGER_SOURCE", {
+      source: "handleFileSelect",
+      uploadType,
+      files: event.target.files?.length || 0,
+    });
+
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
@@ -134,9 +142,28 @@ export default function DataIngestionPage() {
   };
 
   const handleUploadConfirm = async () => {
+    console.log("UPLOAD_TRIGGER_SOURCE", {
+      source: "handleUploadConfirm",
+      uploadType,
+      fileName: selectedFile?.name,
+      validationStatus,
+      inFlight: uploadInFlightRef.current,
+    });
+
+    if (uploadInFlightRef.current) {
+      console.warn("UPLOAD_TRIGGER_SOURCE", {
+        source: "handleUploadConfirm.duplicate_blocked",
+        uploadType,
+        fileName: selectedFile?.name,
+      });
+      return;
+    }
+
     if (validationStatus === "success" && selectedFile) {
+      uploadInFlightRef.current = true;
+      setIsUploading(true);
       try {
-        await ingestFile(uploadType, selectedFile);
+        await ingestFile(uploadType, selectedFile, "handleUploadConfirm");
         if (uploadType === "policy") {
           setPolicyFileName(selectedFile.name);
           setPolicyUploaded(true);
@@ -149,6 +176,9 @@ export default function DataIngestionPage() {
         setValidationStatus("idle");
       } catch (err) {
         alert("Failed to confirm ingestion file upload.");
+      } finally {
+        uploadInFlightRef.current = false;
+        setIsUploading(false);
       }
     }
   };
@@ -347,7 +377,6 @@ export default function DataIngestionPage() {
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge variant="outline" className="bg-white">Regression Model</Badge>
-              <Badge variant="outline" className="bg-white">K-Means Clustering</Badge>
               <Badge variant="outline" className="bg-white">Anomaly Detection</Badge>
             </div>
           </div>
@@ -455,10 +484,10 @@ export default function DataIngestionPage() {
                         </Badge>
                       </td>
                       <td className="py-3 text-xs font-semibold">
-                        {job.records_processed ? job.records_processed.toLocaleString() : "4,627"} Claims
+                        {job.records_processed ? job.records_processed.toLocaleString() : "4,628"} Claims
                       </td>
                       <td className="py-3 text-xs font-semibold text-destructive">
-                        {job.anomaly_detected ? job.anomaly_detected.toLocaleString() : "232"} Anomalies
+                        {job.anomaly_detected ? job.anomaly_detected.toLocaleString() : "37"} Anomalies
                       </td>
                       <td className="py-3 text-xs text-muted-foreground">
                         {job.completed_at ? new Date(job.completed_at).toLocaleString() : "Recently"}
@@ -590,11 +619,11 @@ export default function DataIngestionPage() {
               </Button>
               <Button
                 onClick={handleUploadConfirm}
-                disabled={validationStatus !== "success"}
+                disabled={validationStatus !== "success" || isUploading}
                 className="flex-1 bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary text-white rounded-xl disabled:opacity-50"
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Upload File
+                {isUploading ? "Uploading..." : "Upload File"}
               </Button>
             </div>
           </div>

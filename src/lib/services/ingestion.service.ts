@@ -84,13 +84,28 @@ function splitCsvLine(line: string): string[] {
  */
 export async function ingestFile(
   type: "policy" | "claims",
-  file: File
+  file: File,
+  triggerSource = "unknown"
 ): Promise<IngestionJob> {
+  console.log("UPLOAD_TRIGGER_SOURCE", {
+    source: "ingestFile",
+    triggerSource,
+    type,
+    fileName: file.name,
+  });
+
   const formData = new FormData();
   formData.append("file", file);
 
   try {
     const url = type === "policy" ? "/api/v1/upload/policy" : "/api/v1/upload/claims";
+    console.log("UPLOAD_TRIGGER_SOURCE", {
+      source: type === "policy" ? "uploadPolicy" : "uploadClaims",
+      triggerSource,
+      url,
+      fileName: file.name,
+    });
+
     const response = await apiRequest<{ success: boolean; metadata: { file_name: string; rows_detected: number } }>(url, {
       method: "POST",
       body: formData,
@@ -187,8 +202,8 @@ export async function getDataQualityReport(
   }
 
   return {
-    totalRows: "173,686",
-    missingValuePercentage: "2.3%",
+    totalRows: "4,627",
+    missingValuePercentage: "0.004%",
     formatConsistency: "98.7%",
     keyIntegrityCheck: true,
     schemaValidation: true,

@@ -37,7 +37,7 @@ A high-end, enterprise-grade Insurance Claim Analysis Platform with AI-powered a
 - **Function:** AI analytics and pattern recognition
 - **Features:**
   - Scatter plot: Expected vs Actual Cost
-  - K-Means cluster visualization
+  - Random Forest Regression Model
   - Feature importance analysis
   - Bayesian validation status
 
